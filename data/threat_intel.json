@@ -1,0 +1,25 @@
+{
+  "_comment": "Mock reputation data. Domains are keyed by the From address domain; URLs by the exact link text. A domain or URL with no row is deliberately unknown: greenvalley-produce.example, mailbox-pay.example, https://greenvalley-produce.example/catalog.",
+  "domains": {
+    "harborfoods.example":          {"reputation": "clean",      "age_days": 5840, "lookalike_of": null},
+    "apexsupply.example":           {"reputation": "clean",      "age_days": 4100, "lookalike_of": null},
+    "coastalfreight.example":       {"reputation": "clean",      "age_days": 3650, "lookalike_of": null},
+    "brightpathbenefits.example":   {"reputation": "clean",      "age_days": 2900, "lookalike_of": null},
+    "paywell.example":              {"reputation": "clean",      "age_days": 3300, "lookalike_of": null},
+    "metrodeli.example":            {"reputation": "clean",      "age_days": 2200, "lookalike_of": null},
+    "northstar-grocers.example":    {"reputation": "clean",      "age_days": 1800, "lookalike_of": null},
+    "freshmarket-co.example":       {"reputation": "clean",      "age_days": 1500, "lookalike_of": null},
+    "quickmail.example":            {"reputation": "clean",      "age_days": 6200, "lookalike_of": null},
+    "apex-supp1y.example":          {"reputation": "suspicious", "age_days": 6,    "lookalike_of": "apexsupply.example"},
+    "harborfoods-hr.example":       {"reputation": "suspicious", "age_days": 3,    "lookalike_of": "harborfoods.example"},
+    "m365-secure-login.example":    {"reputation": "malicious",  "age_days": 12,   "lookalike_of": null},
+    "parcel-track-updates.example": {"reputation": "malicious",  "age_days": 9,    "lookalike_of": null}
+  },
+  "urls": {
+    "https://m365-secure-login.example/reset?u=priya.shah":                      {"reputation": "malicious", "lookalike_of": null, "on_blocklist": true},
+    "https://parcel-track-updates.example/redeliver/88213":                       {"reputation": "malicious", "lookalike_of": null, "on_blocklist": true},
+    "https://portal.apexsupply.example/invoices/20471":                           {"reputation": "clean",     "lookalike_of": null, "on_blocklist": false},
+    "https://portal.brightpathbenefits.example/harborfoods/enrollment-2026":      {"reputation": "clean",     "lookalike_of": null, "on_blocklist": false},
+    "https://intranet.harborfoods.example/meetings/q4-vendor-review":             {"reputation": "clean",     "lookalike_of": null, "on_blocklist": false}
+  }
+}

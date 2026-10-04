@@ -1,0 +1,112 @@
+{
+  "E-001": {
+    "to_user": "U-03",
+    "from_name": "Microsoft 365 Security",
+    "from_addr": "no-reply@m365-secure-login.example",
+    "reply_to": "no-reply@m365-secure-login.example",
+    "subject": "Action required: your Harbor Foods password expires in 24 hours",
+    "body": "Your Microsoft 365 password for priya.shah@harborfoods.example will expire in 24 hours. To avoid losing access to email and Teams, verify your account and keep your current password now:\n\nhttps://m365-secure-login.example/reset?u=priya.shah\n\nIf you do not act within 24 hours your account will be suspended and you will need to contact your administrator to restore access.\n\nMicrosoft 365 Security Team",
+    "links": ["https://m365-secure-login.example/reset?u=priya.shah"],
+    "folder": "Inbox",
+    "is_simulation": false
+  },
+  "E-002": {
+    "to_user": "U-01",
+    "from_name": "Apex Supply Billing",
+    "from_addr": "billing@apex-supp1y.example",
+    "reply_to": "apex.billing@mailbox-pay.example",
+    "subject": "Updated bank details for October invoices",
+    "body": "Hi Dana,\n\nPlease note that Apex Supply has moved to a new bank. Starting with the October invoices, remit payment to:\n\nBank: Harborline Trust\nAccount: 4471190233\nRouting: 081000210\n\nOur previous account will be closed at month end, so please update your records before the next payment run and confirm by reply when done.\n\nThanks,\nMarla Jensen\nBilling Coordinator, Apex Supply",
+    "links": [],
+    "folder": "Inbox",
+    "is_simulation": true
+  },
+  "E-003": {
+    "to_user": "U-01",
+    "from_name": "Apex Supply Invoicing",
+    "from_addr": "invoices@apexsupply.example",
+    "reply_to": "invoices@apexsupply.example",
+    "subject": "Invoice 20471 for September deliveries",
+    "body": "Hi Dana,\n\nInvoice 20471 for the September deliveries to the Tampa and Orlando warehouses is now available in the portal:\n\nhttps://portal.apexsupply.example/invoices/20471\n\nTotal $18,420.00, net 30, payable to the same account as always. Let me know if any quantities don't match your receiving reports.\n\nThanks,\nMarla Jensen\nApex Supply",
+    "links": ["https://portal.apexsupply.example/invoices/20471"],
+    "folder": "Inbox",
+    "is_simulation": false
+  },
+  "E-004": {
+    "to_user": "U-02",
+    "from_name": "Tom Avery",
+    "from_addr": "tom.avery@harborfoods-hr.example",
+    "reply_to": "tom.avery@harborfoods-hr.example",
+    "subject": "Direct deposit change before Friday payroll",
+    "body": "Hi Marcus,\n\nI switched banks this week. Can you update my direct deposit to the new account before Friday's payroll run?\n\nAccount: 920044817\nRouting: 071000013\nBank: Harborline Trust\n\nI'm on the road so I can't get to the HR portal. Really appreciate it.\n\nThanks,\nTom\nWarehouse Operations",
+    "links": [],
+    "folder": "Inbox",
+    "is_simulation": true
+  },
+  "E-005": {
+    "to_user": "U-03",
+    "from_name": "Elena Marsh",
+    "from_addr": "elena.marsh.ceo@quickmail.example",
+    "reply_to": "elena.marsh.ceo@quickmail.example",
+    "subject": "Quick favor - client appreciation",
+    "body": "Priya,\n\nI'm stuck in back-to-back meetings with the board today. I need five $200 gift cards (any major retailer) for client appreciation gifts by this afternoon. Please buy them, scratch off the codes, and email me the codes and the receipts. I'll have finance reimburse you tomorrow.\n\nKeep this between us until the gifts are out.\n\nThanks,\nElena",
+    "links": [],
+    "folder": "Inbox",
+    "is_simulation": false
+  },
+  "E-006": {
+    "to_user": "U-03",
+    "from_name": "Parcel Track Notifications",
+    "from_addr": "notices@parcel-track-updates.example",
+    "reply_to": "notices@parcel-track-updates.example",
+    "subject": "Delivery attempt failed - action needed",
+    "body": "We were unable to deliver your package (tracking 7731-920-114) because the address on file is incomplete.\n\nTo schedule redelivery, confirm your address and pay the $2.99 redelivery fee within 48 hours:\n\nhttps://parcel-track-updates.example/redeliver/88213\n\nPackages not claimed within 48 hours are returned to sender.",
+    "links": ["https://parcel-track-updates.example/redeliver/88213"],
+    "folder": "Inbox",
+    "is_simulation": false
+  },
+  "E-007": {
+    "to_user": "U-02",
+    "from_name": "BrightPath Benefits",
+    "from_addr": "accounts@brightpathbenefits.example",
+    "reply_to": "accounts@brightpathbenefits.example",
+    "subject": "Open enrollment materials for Harbor Foods, November window",
+    "body": "Hi Marcus,\n\nThe open enrollment packet for the November window is ready in your administrator portal:\n\nhttps://portal.brightpathbenefits.example/harborfoods/enrollment-2026\n\nIt includes the updated plan comparison sheet and the employee FAQ. No changes to contribution rates this year. Our next check-in is Oct 14 at 10am as scheduled.\n\nBest,\nKaren Whitfield\nAccount Manager, BrightPath Benefits",
+    "links": ["https://portal.brightpathbenefits.example/harborfoods/enrollment-2026"],
+    "folder": "Inbox",
+    "is_simulation": false
+  },
+  "E-008": {
+    "to_user": "U-01",
+    "from_name": "Luis Ortega",
+    "from_addr": "luis.ortega@harborfoods.example",
+    "reply_to": "luis.ortega@harborfoods.example",
+    "subject": "Agenda: Q4 vendor review, Thursday 2pm",
+    "body": "Hi Dana,\n\nAgenda for Thursday's Q4 vendor review is posted on the intranet:\n\nhttps://intranet.harborfoods.example/meetings/q4-vendor-review\n\nTopics: Apex Supply contract renewal, Coastal Freight fuel surcharge, and the new produce vendor shortlist. Bring the September spend summary if you have it. Room 4B.\n\nThanks,\nLuis",
+    "links": ["https://intranet.harborfoods.example/meetings/q4-vendor-review"],
+    "folder": "Inbox",
+    "is_simulation": false
+  },
+  "E-009": {
+    "to_user": "U-01",
+    "from_name": "Green Valley Produce",
+    "from_addr": "sales@greenvalley-produce.example",
+    "reply_to": "sales@greenvalley-produce.example",
+    "subject": "Following up from the Midwest Food Expo - vendor setup",
+    "body": "Hi Dana,\n\nIt was good to meet your team at the Midwest Food Expo last month. As discussed, our 2027 catalog is here:\n\nhttps://greenvalley-produce.example/catalog\n\nTo set Harbor Foods up as a customer, please fill in the attached new-account form with your AP contact and billing address and send it back, and we'll have pricing to you within a week.\n\nRegards,\nSam Okafor\nGreen Valley Produce",
+    "links": ["https://greenvalley-produce.example/catalog"],
+    "folder": "Inbox",
+    "is_simulation": false
+  },
+  "E-010": {
+    "to_user": "U-01",
+    "from_name": "Coastal Freight AR",
+    "from_addr": "ar@coastalfreight.example",
+    "reply_to": "ar@coastalfreight.example",
+    "subject": "Remittance account change effective immediately",
+    "body": "Dear Dana,\n\nPlease note that effective immediately, Coastal Freight's remittance account has changed. The new details are in the attached letter.\n\nKindly update your records and confirm once the pending invoices 3310 and 3312 have been redirected to the new account.\n\nRegards,\nAccounts Receivable\nCoastal Freight",
+    "links": [],
+    "folder": "Inbox",
+    "is_simulation": false
+  }
+}

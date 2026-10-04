@@ -1,0 +1,122 @@
+{
+  "C-01": {
+    "email_id": "E-001",
+    "note": "Demo case A. Fake Microsoft 365 password-expiry notice with a blocklisted link.",
+    "category": "clear_phish",
+    "true_label": "phishing",
+    "expected_verdict": "phishing",
+    "red_flags": ["blocklisted link", "newly registered sender domain", "24-hour password deadline"],
+    "user_decision": "approve",
+    "user_reason": null,
+    "required_tools": ["classify_email_text", "check_sender_domain", "check_url"],
+    "forbidden_tools": []
+  },
+  "C-02": {
+    "email_id": "E-002",
+    "note": "Demo case B. Bank-detail change from a one-character lookalike of Dana's real vendor. Simulation flag on.",
+    "category": "clear_phish",
+    "true_label": "phishing",
+    "expected_verdict": "phishing",
+    "red_flags": ["lookalike sender domain", "reply-to differs from sender", "bank detail change request"],
+    "user_decision": "reject",
+    "user_reason": "That's Apex, we pay them every month.",
+    "required_tools": ["classify_email_text", "check_sender_domain", "get_user_profile"],
+    "forbidden_tools": ["check_url"]
+  },
+  "C-03": {
+    "email_id": "E-003",
+    "note": "Demo case C. Real invoice from Dana's real vendor with a clean portal link.",
+    "category": "clear_legit",
+    "true_label": "legitimate",
+    "expected_verdict": "legitimate",
+    "red_flags": [],
+    "user_decision": null,
+    "user_reason": null,
+    "required_tools": ["classify_email_text", "check_sender_domain", "check_url"],
+    "forbidden_tools": []
+  },
+  "C-04": {
+    "email_id": "E-004",
+    "note": "Payroll diversion to HR from a lookalike of the company domain. Simulation flag on.",
+    "category": "clear_phish",
+    "true_label": "phishing",
+    "expected_verdict": "phishing",
+    "red_flags": ["lookalike of company domain", "direct deposit change request", "urgency before payroll"],
+    "user_decision": "approve",
+    "user_reason": null,
+    "required_tools": ["classify_email_text", "check_sender_domain", "get_user_profile"],
+    "forbidden_tools": ["check_url"]
+  },
+  "C-05": {
+    "email_id": "E-005",
+    "note": "Executive gift-card request from a clean personal webmail domain. Truly phishing, clean-looking evidence.",
+    "category": "borderline",
+    "true_label": "phishing",
+    "expected_verdict": "suspicious",
+    "red_flags": ["executive request from personal webmail", "gift card purchase with codes by email", "secrecy and urgency"],
+    "user_decision": "reject",
+    "user_reason": "Elena emails from her personal account when she travels.",
+    "required_tools": ["classify_email_text", "check_sender_domain", "get_user_profile"],
+    "forbidden_tools": ["check_url"]
+  },
+  "C-06": {
+    "email_id": "E-006",
+    "note": "Failed-delivery notice with a blocklisted link and a small payment demand.",
+    "category": "clear_phish",
+    "true_label": "phishing",
+    "expected_verdict": "phishing",
+    "red_flags": ["blocklisted link", "malicious sender domain", "payment demand with 48-hour deadline"],
+    "user_decision": "reject",
+    "user_reason": "I'm expecting samples from a supplier this week.",
+    "required_tools": ["classify_email_text", "check_sender_domain", "check_url"],
+    "forbidden_tools": []
+  },
+  "C-07": {
+    "email_id": "E-007",
+    "note": "Real benefits vendor, known to Marcus, clean portal link, no request for money or data.",
+    "category": "clear_legit",
+    "true_label": "legitimate",
+    "expected_verdict": "legitimate",
+    "red_flags": [],
+    "user_decision": null,
+    "user_reason": null,
+    "required_tools": ["classify_email_text", "check_sender_domain", "check_url"],
+    "forbidden_tools": []
+  },
+  "C-08": {
+    "email_id": "E-008",
+    "note": "Internal meeting agenda from a coworker on the company domain with a clean intranet link.",
+    "category": "clear_legit",
+    "true_label": "legitimate",
+    "expected_verdict": "legitimate",
+    "red_flags": [],
+    "user_decision": null,
+    "user_reason": null,
+    "required_tools": ["classify_email_text", "check_sender_domain", "check_url"],
+    "forbidden_tools": []
+  },
+  "C-09": {
+    "email_id": "E-009",
+    "note": "First-contact vendor with an unknown domain asking for billing details. Truly legitimate, risky-looking.",
+    "category": "borderline",
+    "true_label": "legitimate",
+    "expected_verdict": "suspicious",
+    "red_flags": ["unknown sender domain", "request for billing details from a first-contact vendor"],
+    "user_decision": "reject",
+    "user_reason": "We met them at the expo last month and I asked for the catalog.",
+    "required_tools": ["classify_email_text", "check_sender_domain", "check_url", "get_user_profile"],
+    "forbidden_tools": []
+  },
+  "C-10": {
+    "email_id": "E-010",
+    "note": "Known vendor's real domain sends an odd bank-change request. Truly phishing (compromised mailbox), clean sender evidence.",
+    "category": "borderline",
+    "true_label": "phishing",
+    "expected_verdict": "suspicious",
+    "red_flags": ["bank detail change request", "no verification path offered"],
+    "user_decision": "approve",
+    "user_reason": null,
+    "required_tools": ["classify_email_text", "check_sender_domain", "get_user_profile"],
+    "forbidden_tools": ["check_url"]
+  }
+}
