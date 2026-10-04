@@ -1,0 +1,38 @@
+[
+  {
+    "label": 1,
+    "true_label": "phishing",
+    "classifier_prob": 0.987,
+    "text": "roper radiusesqu2isnetworkscom toallcountriescialisfastshipping httpmcbvcwbaylivefilestorecomy1pmwhfe7rsfje4hl3hhrdmpnrqui6nrjhk14eoe5hom9omehcwzbjg9pv_bafk7xpfucvrbjhfc1kmvuoh9ymthgindexhtml wed 06 aug 2008 175645 0400 specialpricesnewofferallproducts"
+  },
+  {
+    "label": 1,
+    "true_label": "phishing",
+    "classifier_prob": 0.987,
+    "text": "brendin mandy furballkinetxcom searching reliable chemists wont find better solution site everything cure bad stateeven need fast delivery always rely us obtain trustworthy help fast mouse click traditionstreetcom 5 aug 2008 214200 discover new wed 06 aug 2008 020831 0000 bigger tool"
+  },
+  {
+    "label": 1,
+    "true_label": "phishing",
+    "classifier_prob": 0.655,
+    "text": "karen haas lisawillardeldercricinfocom gaze lisle accompany concede buckeye chemisorb ace chemisorb phytoplankton bert granular divisible upside theyre murky ace upside rankin strobe hookup upside abbe satyr chemisorb michelangelo prolix whitehorse rite ace moratorium willard muddlehead bert status lurch backboard abidjan divisible attestation murky status mushroom muddlehead rankin attestation abbe bert divisible satyr whitehorse fri 08 aug 2008 010259 0100 abidjan dortmund lurch moratorium muddlehead"
+  },
+  {
+    "label": 0,
+    "true_label": "legitimate",
+    "classifier_prob": 0.023,
+    "text": "vacation vacation friday june 2 monday june 12 absence please direct questions issues people bammel storage george grant texaco stella midtexas carlos cp l charlotte hl p charlotte confirmation meters robert error reports sabrae questions leave let know aimee"
+  },
+  {
+    "label": 0,
+    "true_label": "legitimate",
+    "classifier_prob": 0.002,
+    "text": "iybzpoboxcom csv module contains sniffer class supposed deduce delimiter quote character well presence absence header sample taken start purported csv file longer remember wrote ive never big fan determines delimiter based almost solely character frequencies doesnt consider actual structure csv file delimiters quote characters almost always taken set punctuation whitespace characters consequently cause occasional headscratching sample abc8def def8ghi ghi8jkl import csv csvsniffersniffsample ddelimiter 8 sample a8bcdef ab8cdef abc8def abcd8ef csvsniffersniffsample ddelimiter f clear people use letters digits often delimiters samples probably represent data singlecolumn files doublecolumn files 8 f delimiter would happy get rid 30 im also aware people use id like feedback python community removed someone wants badly enough maintain pypi thanks skip montanaro iybzpoboxcom httpwwwwebfastcomskip _______________________________________________ python3000 mailing list smsbmo9552pythonorg httpmailpythonorgmailmanlistinfopython3000 unsubscribe httpmailpythonorgmailmanoptionspython3000python300040tangomucom wed 06 aug 2008 095850 0500 python3000 csvsniffer delete python 30"
+  },
+  {
+    "label": 0,
+    "true_label": "legitimate",
+    "classifier_prob": 0.119,
+    "text": "schedule c reserves trouble valueing transmission literally forever finally released spread option model last night value transmission spit huge values money transmission valued daily option example transmission big eddy northwest nob spit value 28 million extrinsic given state affairs california right find highly unlikely take power northwest deliver capped market last night recognized 16 million transmission value almost intrinsic value associated closing open positions reserved 36 million associated extrinsic value revalue options week make appropriate adjustments reserves let know questions concerns"
+  }
+]
