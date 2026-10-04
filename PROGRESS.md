@@ -8,9 +8,11 @@
 
 - 2026-10-04: Sunday step 2, world data. `phishing_guard/world.py` (USERS, loaders, `reset_world`), `data/emails.json` (10 emails E-001 to E-010, incl. demo A = E-001, B = E-002, C = E-003), `data/threat_intel.json` (13 domains, 5 URLs; `greenvalley-produce.example`, `mailbox-pay.example`, and the Green Valley catalog URL are deliberately unknown), `data/test_cases.json` (C-01 to C-10: 4 clear_phish, 3 clear_legit, 3 borderline; 3 approve, 4 reject, 3 not asked; 2 simulations). `scripts/check_world.py` validates shape, threat-intel coverage, and HITL-table consistency. These 10 are the development set the report must name.
 
+- 2026-10-04: Sunday step 3, tools and Guard. `phishing_guard/tools.py` (four evidence tools + `record_verdict`, PLAN.md code verbatim except `record_verdict` now returns an error string for an unknown email instead of raising KeyError), `phishing_guard/guard_agents.py` (`GUARD_INSTRUCTIONS` verbatim, `make_guard(tools, extra)`, `build_input` verbatim, plus a Sunday-only addendum telling Guard the ACT/FOLLOW UP tools do not exist yet), `phishing_guard/trace_utils.py` (`show_trace` from the tutorial). `scripts/test_tools_offline.py` invokes each tool through the SDK's `on_invoke_tool` path with no model: 14/14 checks pass. Classifier alone on the 10 dev emails at 0.5: flags E-001, E-002, E-006, E-010; misses E-004 (payroll diversion, 0.20) and E-005 (gift cards, 0.39); clears all legit ones. That gap is the case for the agent.
+
 ## Next
 
-- Sunday, Oct 4 checklist from PLAN.md: build the four evidence tools and `record_verdict`; verify SDK pause/resume behavior; end-of-day check on three emails.
+- Sunday, Oct 4 checklist from PLAN.md: verify SDK pause/resume behavior; end-of-day check on three emails.
 
 ## Problems
 
