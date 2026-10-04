@@ -49,10 +49,10 @@
   },
   "C-05": {
     "email_id": "E-005",
-    "note": "Executive gift-card request from a clean personal webmail domain. Truly phishing, clean-looking evidence.",
-    "category": "borderline",
+    "note": "Executive gift-card request from personal webmail: the classic CEO-fraud pattern. Clean domain, but content signals are clear.",
+    "category": "clear_phish",
     "true_label": "phishing",
-    "expected_verdict": "suspicious",
+    "expected_verdict": "phishing",
     "red_flags": ["executive request from personal webmail", "gift card purchase with codes by email", "secrecy and urgency"],
     "user_decision": "reject",
     "user_reason": "Elena emails from her personal account when she travels.",
