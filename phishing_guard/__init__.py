@@ -5,6 +5,7 @@ Modules:
     world         mock mailbox, users, threat intel, logs, reset_world()
     classifier    TF-IDF + logistic regression training, loading, top_words()
     tools         function tools Guard can call
-    guard_agents  Guard (and later Coach) agent definitions, build_input()
+    guard_agents  Coach and Guard agent definitions, build_input()
+    runners       run_investigation, run_interactive, run_case
     trace_utils   show_trace() copied from the class tutorial
 """
