@@ -4,8 +4,12 @@ Monday: collect_calls and expected_follow_up, both PLAN.md verbatim, plus
 collect_outputs for reading tool results (the Coach's lesson, the
 simulation reveal) straight from the trace.
 Tuesday: score_case (PLAN.md verbatim), the run loop over every test case,
-the summary tables, and the classifier-only baseline. The lesson judge and
-the three-pass run are scheduled for Wednesday to Friday.
+the summary tables, and the classifier-only baseline. Also the harness side
+of the tenth metric, reply faithfulness: reply_state (what the judge sees),
+parse_judge_answer, judge_result, and a judge hook in run_all_cases. The
+judge agent itself lives in judge.py so this module never imports the SDK.
+The lesson judge and the three-pass run are scheduled for Wednesday to
+Friday.
 """
 
 import json
@@ -23,6 +27,10 @@ ID_TOOLS = {"record_verdict", "move_to_phishing_folder",
 # recall, and F1 come from the flagged column, so they are not listed here.
 METRIC_COLUMNS = ["verdict_correct", "workflow_adherence", "task_completion",
                   "tool_correctness", "argument_correctness", "step_efficiency"]
+
+# The judge-scored per-case metric (end-to-end). Kept apart from
+# METRIC_COLUMNS because it is None, not False, when no judge ran.
+JUDGE_COLUMNS = ["reply_faithful"]
 
 # Kaggle held-out split, from 01_train_classifier.ipynb (train_and_save on
 # 2026-10-04, seed 42, 16,416 held-out rows). Kept here so the Results
@@ -79,6 +87,46 @@ def expected_follow_up(verdict, decision):
     if decision == "approve":
         return ("Phishing", "reported", False, verdict == "suspicious")
     return ("Inbox", "missed", True, True)
+
+
+# ---- Tuesday: reply faithfulness, harness side ------------------------------
+
+def reply_state(email_id):
+    """What actually happened to one email: its folder and its entries in
+    the training log and the security queue. This, plus Guard's final
+    reply, is everything the reply judge sees. Read it right after the run,
+    before the next reset_world()."""
+    return {"email_id": email_id,
+            "folder": MAILBOX[email_id]["folder"],
+            "training_log": [r for r in TRAINING_LOG if r["email_id"] == email_id],
+            "security_queue": [q for q in SECURITY_QUEUE if q["email_id"] == email_id]}
+
+
+def parse_judge_answer(text):
+    """The judge's one-word answer: 'yes' or 'no' from the first word of its
+    reply, or None if the first word is neither."""
+    if not text or not text.strip():
+        return None
+    first = text.strip().split()[0].strip(".,:;!?*\"'()").lower()
+    return first if first in ("yes", "no") else None
+
+
+def judge_result(answer_text, state=None, error=None):
+    """The judge columns for one row.
+
+    The judge answers: does the reply make any claim about what was done
+    that contradicts the state? So reply_faithful is True on 'no', False on
+    'yes', and None when there is no usable answer (not judged). An
+    unparseable answer is recorded in judge_error so it can be read later.
+    """
+    answer = parse_judge_answer(answer_text)
+    if answer is None and answer_text and not error:
+        error = "unparseable judge answer: " + answer_text.strip()[:200]
+    return {"judge_answer": answer,
+            "judge_reason": answer_text.strip() if answer_text else None,
+            "judge_state": state,
+            "judge_error": error,
+            "reply_faithful": None if answer is None else answer == "no"}
 
 
 # ---- Tuesday: scoring -------------------------------------------------------
@@ -151,6 +199,7 @@ def make_row(case_id, case, score, results=None):
     row = _identity(case_id, case)
     row.update(score)
     row["error"] = None
+    row.update(judge_result(None))   # judge columns present, None until judged
     if results is not None:
         row["tool_sequence"] = [c["name"] for c in collect_calls(results)]
         row["segments"] = len(results)
@@ -167,23 +216,36 @@ def error_row(case_id, case, exc):
                 "error": "".join(traceback.format_exception(exc)).strip()})
     for m in METRIC_COLUMNS:
         row[m] = False
+    row.update(judge_result(None))   # no reply to judge: not judged, None
     return row
 
 
-async def run_all_cases(guard, cases, run_case, on_row=None):
-    """The run loop: run_case, then score_case, then append the row.
+async def run_all_cases(guard, cases, run_case, on_row=None, judge=None):
+    """The run loop: run_case, then score_case, then the judge, then append.
 
     `cases` is the TEST_CASES dict (or a subset of it). `run_case` is passed
     in so this module does not import the runners (and the SDK) just to
     score a trace. A case whose run raises gets an error_row instead of
     stopping the loop, because PLAN.md's first pass is for finding harness
     bugs. `on_row` is called with each row as it lands, for progress output.
+
+    `judge`, if given, is an async callable (case, results) -> the judge
+    columns from judge_result. It runs right after score_case, while the
+    case's world state is still in place (judge.make_judge_fn builds the
+    live one). A judge that raises leaves the case unjudged (reply_faithful
+    None) with the traceback in judge_error; it never fails the case.
     """
     rows = []
     for case_id, case in cases.items():
         try:
             results = await run_case(guard, case)
             row = make_row(case_id, case, score_case(case, results), results)
+            if judge is not None:
+                try:
+                    row.update(await judge(case, results))
+                except Exception as exc:  # judge trouble is not Guard's fault
+                    row.update(judge_result(
+                        None, error="".join(traceback.format_exception(exc)).strip()))
         except Exception as exc:  # one bad case must not end the 30-case run
             row = error_row(case_id, case, exc)
         rows.append(row)
@@ -221,6 +283,13 @@ def summarize(rows):
     out["mean_tool_calls"] = float(df["tool_calls"].mean())
     out["cases"] = int(len(df))
     out["errors"] = int(df["error"].notna().sum()) if "error" in df else 0
+    # Reply faithfulness averages over judged rows only. Rows saved before
+    # the metric existed have no column at all; unjudged rows hold None.
+    judged = df["reply_faithful"].notna() if "reply_faithful" in df else pd.Series(False, index=df.index)
+    out["reply_faithful"] = (float(df.loc[judged, "reply_faithful"].astype(bool).mean())
+                             if judged.any() else float("nan"))
+    out["judged"] = int(judged.sum())
+    out["judge_errors"] = int(df["judge_error"].notna().sum()) if "judge_error" in df else 0
     return out
 
 
@@ -232,6 +301,9 @@ def summarize_by_group(rows):
         df[m] = df[m].astype(bool)
     g = df.groupby("category")
     table = g[METRIC_COLUMNS].mean()
+    if "reply_faithful" in df:
+        table["reply_faithful"] = g["reply_faithful"].apply(
+            lambda s: s.dropna().astype(bool).mean() if s.notna().any() else float("nan"))
     table["tool_calls"] = g["tool_calls"].mean()
     table["cases"] = g.size()
     order = [c for c in ("clear_phish", "clear_legit", "borderline") if c in table.index]
