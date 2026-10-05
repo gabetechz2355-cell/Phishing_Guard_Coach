@@ -13,8 +13,16 @@ from phishing_guard.world import (MAILBOX, TEST_CASES, THREAT_INTEL, USERS,
                                   reset_world)
 
 # Domains and URLs that are meant to have no threat-intel row.
-DELIBERATELY_UNKNOWN_DOMAINS = {"greenvalley-produce.example", "mailbox-pay.example"}
-DELIBERATELY_UNKNOWN_URLS = {"https://greenvalley-produce.example/catalog"}
+DELIBERATELY_UNKNOWN_DOMAINS = {"greenvalley-produce.example", "mailbox-pay.example",
+                                "talentbridge-staffing.example", "midwestfoodexpo.example"}
+DELIBERATELY_UNKNOWN_URLS = {
+    "https://greenvalley-produce.example/catalog",
+    "https://filedrop-share.example/s/q4-forecast-metrodeli",
+    "https://talentbridge-staffing.example/candidates/warehouse-shortlist",
+    "https://register.midwestfoodexpo.example/2027/exhibitors",
+    "https://verify.paywell.example/admin-attestation",
+    "https://harborfoods.tallyline.example/signup",
+}
 
 EVIDENCE_WITH_LINKS = "check_url"
 VERDICTS = {"legitimate", "suspicious", "phishing"}
