@@ -237,6 +237,13 @@ def main():
     check(state["phase"] == "done", "odd run finished", state["phase"])
     check("lookup_dns_history" in call_names(ev),
           "unknown tool name passes through untouched")
+    odd_id = next(e["call_id"] for e in of_type(ev, "tool_call")
+                  if e["name"] == "lookup_dns_history")
+    odd_out = next(e for e in of_type(ev, "tool_result")
+                   if e["call_id"] == odd_id)
+    check(odd_out.get("data") == {"error": "no such tool in the real system"},
+          "python-repr tool output parsed into the data field",
+          str(odd_out.get("data")))
     verdict = next(e for e in of_type(ev, "tool_call")
                    if e["name"] == "record_verdict")
     check(verdict["args"]["verdict"] == "suspicious", "suspicious verdict")

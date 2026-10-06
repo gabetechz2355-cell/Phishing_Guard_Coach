@@ -144,8 +144,10 @@ SCENARIOS = {
             ("classify_email_text", {"email_id": "E-010"},
              json.dumps({"phishing_probability": 0.55, "top_words": ["payment"]})),
             # An unknown tool name: the page must render it generically.
+            # Output as a Python repr, like live tools, so the offline check
+            # exercises the server-side literal_eval -> data path.
             ("lookup_dns_history", {"domain": "unknown-vendor.example"},
-             json.dumps({"error": "no such tool in the real system"})),
+             str({"error": "no such tool in the real system"})),
         ],
         # Early stop: verdict recorded, then no move, no follow-up, reply.
         "reply_done": ("Verdict: suspicious. I could not confirm the sender "

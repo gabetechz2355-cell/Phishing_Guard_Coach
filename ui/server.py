@@ -241,9 +241,14 @@ def main(argv=None):
         from ui.fake_runner import make_fake_runner
         app = App(make_fake_runner(delay=args.fake_delay), mode="fake")
     else:
-        print("Live mode is plan stage 3 and is not built yet. "
-              "Run with --fake.")
-        return 2
+        from phishing_guard.config import has_openai_key
+        if not has_openai_key():
+            print("Live mode needs OPENAI_API_KEY in the environment or "
+                  ".env (never printed). Add it, or run with --fake.")
+            return 2
+        from ui.live_runner import make_live_runner
+        app = App(make_live_runner(), mode="live")
+        print("LIVE mode: each run calls the OpenAI API.")
 
     server = make_server(app, args.port)
     host, port = server.server_address

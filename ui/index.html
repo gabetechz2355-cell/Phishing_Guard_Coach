@@ -85,7 +85,8 @@ button.rej{border-color:var(--red);color:var(--red)}
 button.btn:hover{border-color:var(--red)}
 button.btn:disabled{opacity:.45;cursor:default}
 .gbody{flex:1;min-height:0;overflow:auto}
-.gcols{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:start}
+.gcols{columns:2;column-gap:14px}
+.gcols .step,.gcols .card{break-inside:avoid}
 .step{display:flex;gap:8px;padding:3px 0;border-top:1px solid var(--line);
   animation:in .3s ease}
 @keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
@@ -117,6 +118,7 @@ button.btn:disabled{opacity:.45;cursor:default}
 input.txt{width:100%;font:inherit;border:1px solid var(--line);background:var(--bg);
   color:var(--ink);border-radius:6px;padding:6px 9px;margin-top:7px}
 .lesson,.replytext{white-space:pre-wrap;font-size:11.5px;line-height:1.32}
+.replytext{columns:2;column-gap:20px}
 .errcard{border:2px solid var(--red)}
 .errcard .m{color:var(--red);font-weight:700}
 .truth{background:var(--tint);border:1px solid var(--line);border-radius:8px;
@@ -179,7 +181,8 @@ function tryJSON(s){try{return JSON.parse(s);}catch(e){return null;}}
 // Fixed per-tool templates over the tool's own JSON result (plan rule 4).
 // Anything unparseable or unknown falls back to the raw text, verbatim.
 function stepDetail(call, out){
-  var o = out==null ? null : tryJSON(out.output);
+  var o = out==null ? null :
+    (out.data!==undefined ? out.data : tryJSON(out.output));
   var a = call.args || {};
   if(out==null){return "…";}
   if(o==null){return out.output;}
@@ -297,12 +300,12 @@ function guardCards(){
         var rep=null;
         for(var j=0;j<ev.length;j++){if(ev[j].type==="reply"){rep=ev[j];}}
         if(rep&&rep.text&&overlap(out.output,rep.text)>=0.8){
-          B.push('<div class="step"><div class="dot">&#10003;</div>'+
+          A.push('<div class="step"><div class="dot">&#10003;</div>'+
             '<div class="sd"><span class="chip">COACH</span><b>Coach wrote '+
             'the lesson.</b> <span class="di">Passed to Guard word for '+
             'word; read it in Guard&rsquo;s reply below.</span></div></div>');
         }else{
-          B.push('<div class="card"><div class="layer">COACH</div>'+
+          A.push('<div class="card"><div class="layer">COACH</div>'+
             '<div class="lesson">'+esc(out.output)+'</div></div>');
         }
         continue;
@@ -315,7 +318,7 @@ function guardCards(){
         esc(layer)+(TITLES[e.name]?'':' · not a known tool')+'</span>'+
         '<b>'+esc(title)+'.</b> <span class="di">'+esc(detail)+
         '</span></div></div>';
-      (COL_B[e.name]?B:A).push(html);
+      A.push(html);
     }
     else if(e.type==="approval_request"){
       var pend = phase()==="paused" && e.seq===lastReq && lastDec<e.seq;
@@ -346,7 +349,7 @@ function guardCards(){
     }
     else if(e.type==="decision"){
       // Column B reads as "what followed the human's decision".
-      B.push('<div class="step"><div class="dot">&#9995;</div>'+
+      A.push('<div class="step"><div class="dot">&#9995;</div>'+
         '<div class="sd"><span class="chip">YOUR DECISION</span><b>'+
         (e.decision==="approve"?"Approved the move.":"Rejected the move.")+
         '</b>'+(e.reason?' <span class="di">&ldquo;'+esc(e.reason)+
@@ -454,8 +457,8 @@ function render(){
   if(S&&S.events.length&&phase()==="investigating"&&shown>=S.events.length){
     h+='<p class="mute">Guard is investigating&hellip;</p>';
   }
-  h+=cards.top+'<div class="gcols"><div>'+cards.A+'</div><div>'+cards.B+
-    '</div></div>'+cards.R+'</div>';
+  h+=cards.top+'<div class="gcols">'+cards.A+cards.B+'</div>'+cards.R+
+    '</div>';
   if(S&&S.events.length&&S.truth){
     h+='<div class="truth"><div class="k">MAILBOX TRUTH (read from the '+
       'system, not from Guard)</div><code>Folder: '+esc(S.truth.folder)+

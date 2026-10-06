@@ -14,6 +14,7 @@ This module never imports the agents SDK, so the offline checks and the
 fake server run without it ever loading.
 """
 
+import ast
 import json
 import threading
 from datetime import datetime, timezone
@@ -88,8 +89,21 @@ class EventLog:
                 call_id = raw["call_id"] if isinstance(raw, dict) else raw.call_id
                 if call_id not in self._seen_outputs:
                     self._seen_outputs.add(call_id)
-                    self._append("tool_result", call_id=call_id,
-                                 output=str(item.output))
+                    out = str(item.output)
+                    fields = {"call_id": call_id, "output": out}
+                    # Live tools return dicts; the SDK records their str()
+                    # (Python repr, single quotes), which the page cannot
+                    # JSON-parse. literal_eval is safe (literals only) and
+                    # gives the page structured data for its fixed
+                    # templates. The raw string stays in `output`.
+                    try:
+                        val = ast.literal_eval(out)
+                        if isinstance(val, (dict, list)):
+                            fields["data"] = val
+                    except (ValueError, SyntaxError, MemoryError,
+                            RecursionError):
+                        pass
+                    self._append("tool_result", **fields)
         for request in result.interruptions:
             call_id = getattr(getattr(request, "raw_item", None), "call_id", None)
             self._append("approval_request", call_id=call_id,
