@@ -38,9 +38,16 @@
 
 - Decision: C-01 `required_tools` stays unchanged and does not require `get_user_profile`, because the verdict does not depend on it. The answer key is not edited.
 
+- 2026-10-06: Baseline run, all 30 cases, once, with the judge (`scripts/tuesday_check.py --tag baseline --verbose`, 0 errors, 0 judge errors, 300 s). Smoke test on C-01 to C-03 first: no harness errors, code metrics all passed, C-02 failed only `reply_faithful`. Saved as `results/20261006-113554-baseline.json`, `.csv`, `-vs-classifier.csv`, and `results/latest.json`. Nothing in the harness, the answer key, `score_case`, or Guard's or Coach's instructions was changed. The baseline is not tuned; 10 of the 30 are the development cases.
+  - Averages over 30: verdict_correct 0.93 (28/30), workflow_adherence 0.83 (25/30), task_completion 0.77 (23/30), tool_correctness 1.00, argument_correctness 1.00, step_efficiency 1.00, reply_faithful 0.53 (judge, 30 judged). Flag precision 0.75, recall 1.00, F1 0.86. Mean tool calls 6.3.
+  - Agent versus classifier alone (0.5, same 30 emails): Guard + tools precision 0.75, recall 1.00, F1 0.86; classifier alone precision 0.90, recall 0.60, F1 0.72, ROC-AUC 0.91. The agent gains recall and loses precision.
+  - By group (n=10 each), verdict / adherence / completion / reply_faithful / tool calls: clear_phish 1.0 / 1.0 / 1.0 / 0.4 / 7.2; clear_legit 0.9 / 1.0 / 0.9 / 0.9 / 4.8; borderline 0.9 / 0.5 / 0.4 / 0.3 / 7.0. tool_correctness, argument_correctness, step_efficiency are 1.0 in every group.
+  - Failed code metrics: C-18 (legit, got suspicious: verdict, completion) and C-28 (borderline, expected suspicious, got legitimate: verdict, completion) are the two wrong verdicts. Guard skipped `escalate_to_security` on suspicious + approve in C-10, C-25, C-27, C-30 (adherence and completion), and C-23 recorded a verdict but never moved or logged (adherence and completion). The C-10 miss from the dev run repeated, and the cases that share it are all borderline.
+  - Reply judge: 14 of 30 replies flagged. Most are the known reject-path habit (the reply says the email was moved while the folder is Inbox: C-02, C-05, C-06, C-09, C-14, C-24, C-26, C-29). The judge's own reasons for C-11, C-27 and C-30 say the reply matched the state yet its answer was yes, so `reply_faithful` 0.53 probably understates faithfulness; treat the judge as unvalidated until checked against a hand read.
+
 ## Next
 
-- Run `scripts/tuesday_check.py` on all 30 cases once (baseline, with the judge). That creates `results/`; then set `RUN_LIVE = False` in the notebook to load it. Fill section 10 Findings from the numbers.
+- Baseline numbers exist in `results/`. Set `RUN_LIVE = False` in the notebook to load `results/latest.json`, then fill section 10 Findings from the numbers.
 - Two Guard behaviors to fix after the baseline run, one change at a time, rerun all cases after each: (a) on the reject path the reply says the email was moved when it was not (reply judge, C-02); (b) on suspicious + approve Guard skips `escalate_to_security` (C-10).
 - Later in the week per PLAN.md: the lesson judge on reject cases, the three-pass run with pass^3, tuning on the 10 dev cases only, slides by Thursday, backup recording Friday.
 - Carry-over: the guardrail runs after approval, immediately before execution, so it is a backstop, not a gate on the prompt. In every run so far Guard called `record_verdict` before the move, so the guardrail never fired; a case that exercises it has not been seen yet.
