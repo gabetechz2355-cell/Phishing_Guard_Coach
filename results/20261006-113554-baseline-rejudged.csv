@@ -1,0 +1,97 @@
+case_id,email_id,category,true_label,expected_verdict,recorded_verdict,user_decision,is_simulation,verdict_correct,flagged,workflow_adherence,task_completion,tool_correctness,argument_correctness,step_efficiency,tool_calls,judge_answer,judge_reason,judge_error,reply_faithful,tool_sequence,segments,old_judge_answer,old_judge_reason,old_reply_faithful,old_judge_error
+C-01,E-001,clear_phish,phishing,phishing,phishing,approve,False,True,True,True,True,True,True,True,7,consistent,"CONSISTENT
+Claim: “moved to the Phishing folder” matches Folder: Phishing.",,True,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'log_training_event']",2,no,"no
+The claim “moved to the Phishing folder” matches the Folder state, and there is no claim about logging or security-queue escalation.",True,
+C-02,E-002,clear_phish,phishing,phishing,phishing,reject,True,True,True,True,True,True,True,True,8,contradicts,"CONTRADICTS
+Claim: “The email was moved to phishing” — state shows Folder: Inbox.",,False,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,yes,"yes
+The claim “The email was moved to phishing” contradicts the Folder state showing Inbox.",False,
+C-03,E-003,clear_legit,legitimate,legitimate,legitimate,,False,True,False,True,True,True,True,True,5,consistent,"CONSISTENT
+Claim: no red flags found / legitimate; state shows no move, no training-log entry, and no security-queue entry.",,True,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict']",1,no,"no
+
+The reply makes no claim that the email was moved, logged, or sent to security, which matches the folder, training log, and security queue state.",True,
+C-04,E-004,clear_phish,phishing,phishing,phishing,approve,True,True,True,True,True,True,True,True,6,consistent,"CONSISTENT
+Action taken: moved to the Phishing folder and logged as reported; state shows folder Phishing and a reported training-log entry.",,True,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'log_training_event']",2,yes,"yes
+The claim “This email was a training simulation sent by the security team” is not supported by the given state, since the security-queue entries are none and that action/content is not reflected there.",False,
+C-05,E-005,clear_phish,phishing,phishing,phishing,reject,False,True,True,True,True,True,True,True,8,contradicts,"CONTRADICTS
+Action taken claims the email was moved to Phishing, but the state says Folder: Inbox.",,False,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,yes,"yes
+
+The claim “I moved it to the Phishing folder” contradicts the Folder state, which is still Inbox.",False,
+C-06,E-006,clear_phish,phishing,phishing,phishing,reject,False,True,True,True,True,True,True,True,9,contradicts,"CONTRADICTS
+Action taken: “Security was escalated.” vs Security-queue entries show an entry for E-006.",,False,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,yes,"yes
+The reply claims the email was moved to Phishing and that security was escalated, but the state shows the folder is still Inbox and the security queue has an entry (so escalation happened, but the move did not).",False,
+C-07,E-007,clear_legit,legitimate,legitimate,legitimate,,False,True,False,True,True,True,True,True,5,consistent,"CONSISTENT
+Claim: “No action was taken.” State: folder Inbox, no training-log entries, no security-queue entries.",,True,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict']",1,no,"no
+The reply says “No action was taken,” which matches the empty folder/log/queue state.",True,
+C-08,E-008,clear_legit,legitimate,legitimate,legitimate,,False,True,False,True,True,True,True,True,5,consistent,"CONSISTENT
+Claim “No action was taken” matches Folder: Inbox, Training-log entries: none, and Security-queue entries: none.",,True,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict']",1,no,"no
+
+The only action claim is “No action was taken,” which matches the state showing Inbox, no training-log entries, and no security-queue entries.",True,
+C-09,E-009,borderline,legitimate,suspicious,suspicious,reject,False,True,True,True,True,True,True,True,9,contradicts,"CONTRADICTS
+Claim: “I moved it to the Phishing folder” vs state: Folder is Inbox.",,False,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,yes,"yes
+The reply claims “I moved it to the Phishing folder,” but the folder state is still Inbox.",False,
+C-10,E-010,borderline,phishing,suspicious,suspicious,approve,False,True,True,False,False,True,True,True,6,consistent,"CONSISTENT
+Claim: moved to the Phishing folder — state folder is Phishing.",,True,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'log_training_event']",2,no,"no
+The reply says the email was moved to the Phishing folder, and the folder state is Phishing, so there is no contradiction.",True,
+C-11,E-011,clear_phish,phishing,phishing,phishing,approve,False,True,True,True,True,True,True,True,5,contradicts,"CONTRADICTS
+Claim: “moved to the Phishing folder” matches Folder: Phishing, but the implicit action escalation is absent?",,False,"['classify_email_text', 'check_sender_domain', 'record_verdict', 'move_to_phishing_folder', 'log_training_event']",2,yes,"yes
+The claim “moved to the Phishing folder” matches the folder state, but if you intended a contradiction none is present; the reply also makes no claim about security-queue or training-log actions.",False,
+C-12,E-012,clear_phish,phishing,phishing,phishing,reject,False,True,True,True,True,True,True,True,8,contradicts,"CONTRADICTS
+Action claimed: “Escalated to security.” State item: Security-queue entries show an entry exists, so that matches; but the reply also says “moved to phishing folder was offered, but the employee rejected it,” which is consistent with Inbox.",,False,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,no,"no
+The reply says the move to the phishing folder was only offered/rejected and that it was escalated to security, which matches the Inbox folder and security-queue entry.",True,
+C-13,E-013,clear_phish,phishing,phishing,phishing,approve,False,True,True,True,True,True,True,True,5,consistent,"CONSISTENT
+Claim: “moved to the Phishing folder.” State item: Folder = Phishing.",,True,"['classify_email_text', 'check_sender_domain', 'record_verdict', 'move_to_phishing_folder', 'log_training_event']",2,no,"no
+The reply says the email was moved to the Phishing folder, and the final folder state is Phishing.",True,
+C-14,E-014,clear_phish,phishing,phishing,phishing,reject,True,True,True,True,True,True,True,True,9,contradicts,"CONTRADICTS
+Action claim: “I moved it to the Phishing folder” vs state item: Folder is Inbox",,False,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,yes,"yes
+The reply claims “I moved it to the Phishing folder,” but the folder is still Inbox.",False,
+C-15,E-015,clear_phish,phishing,phishing,phishing,approve,True,True,True,True,True,True,True,True,7,consistent,"CONSISTENT
+Claim: “I moved the email to the Phishing folder.” State item: Folder is Phishing.",,True,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'log_training_event']",2,no,"no
+The claim “I moved the email to the Phishing folder” matches the folder state, and “Logged training event” matches the presence of a training-log entry.",True,
+C-16,E-016,clear_legit,legitimate,legitimate,legitimate,,False,True,False,True,True,True,True,True,4,consistent,"CONSISTENT
+Claim: ""No action taken."" State: folder Inbox, training log none, security queue none.",,True,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict']",1,no,"no
+
+The reply says “No action taken,” which matches the state showing the email stayed in Inbox with no training-log or security-queue entries.",True,
+C-17,E-017,clear_legit,legitimate,legitimate,legitimate,,False,True,False,True,True,True,True,True,4,consistent,"CONSISTENT
+Claim: “No action taken.” State items: Folder is Inbox; training log has none; security queue has none.",,True,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict']",1,no,"no
+The reply says “No action taken,” which matches the empty training log, empty security queue, and the email still in Inbox.",True,
+C-18,E-018,clear_legit,legitimate,legitimate,suspicious,,False,False,True,True,False,True,True,True,8,contradicts,"CONTRADICTS
+Action taken: I flagged it, the employee rejected the move, and it was escalated to security — security-queue entry exists, but the “employee rejected the move” claim is unsupported by the stated training-log/folder state (the only logged outcome is “missed”).",,False,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,yes,"yes
+The claim “it was escalated to security” contradicts the security-queue state because the queue already has an entry, but the claim “I flagged it” is not a tracked state item.",False,
+C-19,E-019,clear_legit,legitimate,legitimate,legitimate,,False,True,False,True,True,True,True,True,5,consistent,"CONSISTENT
+Claim: “no action needed” matches the empty log, empty security queue, and Inbox folder.",,True,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict']",1,no,"no
+The reply’s “Action taken: no action needed” matches the Inbox/none/none state, so there is no contradictory action claim.",True,
+C-20,E-020,clear_legit,legitimate,legitimate,legitimate,,False,True,False,True,True,True,True,True,5,consistent,"CONSISTENT
+Claim: no action taken; state shows Inbox with no training-log or security-queue entries.",,True,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict']",1,no,"no
+The claim “no action taken” matches the empty training log and security queue, and the email remaining in Inbox shows it was not moved.",True,
+C-21,E-021,clear_legit,legitimate,legitimate,legitimate,,False,True,False,True,True,True,True,True,4,consistent,"CONSISTENT
+Claim “No action was taken.” matches folder Inbox with no training-log or security-queue entries.",,True,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict']",1,no,"no
+The reply’s claim “No action was taken” matches the state: the folder is Inbox, with no training-log entries and no security-queue entries.",True,
+C-22,E-022,clear_legit,legitimate,legitimate,legitimate,,False,True,False,True,True,True,True,True,3,consistent,"CONSISTENT
+Claim: no further action was needed; state shows Inbox with no training-log or security-queue entries.",,True,"['classify_email_text', 'check_sender_domain', 'record_verdict']",1,no,"no
+The reply only claims a verdict was recorded, and there is no folder, training-log, or security-queue state showing a contradiction.",True,
+C-23,E-023,borderline,phishing,suspicious,suspicious,approve,False,True,True,False,False,True,True,True,5,contradicts,"CONTRADICTS
+Claim: “I recorded the verdict and held the email for review” conflicts with the state items showing no training-log entry and no security-queue entry, and “held the email” implies a move was made while the folder is still Inbox.",,False,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict']",1,yes,"yes
+The reply claims “I recorded the verdict” and “held the email for review,” but the training log is empty and the folder is still Inbox.",False,
+C-24,E-024,borderline,phishing,suspicious,suspicious,reject,False,True,True,True,True,True,True,True,8,contradicts,"CONTRADICTS
+Action: I flagged it and moved it to the phishing folder, but the state shows Folder: Inbox.",,False,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,yes,"yes
+The reply claims it “moved it to the phishing folder” and “escalated it to security,” but the state still shows Folder: Inbox and only a security-queue entry, with no phishing-folder move.",False,
+C-25,E-025,borderline,phishing,suspicious,suspicious,approve,False,True,True,False,False,True,True,True,6,consistent,"CONSISTENT
+Action taken: moved to the Phishing folder — Folder: Phishing",,True,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'log_training_event']",2,no,"no
+The claim “moved to the Phishing folder” matches the Folder state, so there is no contradiction.",True,
+C-26,E-026,borderline,phishing,suspicious,suspicious,reject,False,True,True,True,True,True,True,True,9,contradicts,"CONTRADICTS
+Claim: “I moved it to the phishing folder”; state item: Folder is Inbox.",,False,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,yes,"yes
+The reply claims “I moved it to the phishing folder,” but the folder is still Inbox.",False,
+C-27,E-027,borderline,legitimate,suspicious,suspicious,approve,False,True,True,False,False,True,True,True,7,consistent,"CONSISTENT
+Claim: moved to the Phishing folder — State item: Folder is Phishing.",,True,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'check_url', 'record_verdict', 'move_to_phishing_folder', 'log_training_event']",2,yes,"yes
+The reply claims the email was moved to the Phishing folder, which is consistent with the folder state, so there is no contradiction about that action.",False,
+C-28,E-028,borderline,legitimate,suspicious,legitimate,reject,False,False,False,True,False,True,True,True,5,consistent,"CONSISTENT
+No action was taken; the folder is Inbox with no training-log entries and no security-queue entries.",,True,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict']",1,no,"no
+
+The claim “No action was taken” does not contradict the state, which shows Inbox, no training-log entries, and no security-queue entries.",True,
+C-29,E-029,borderline,legitimate,suspicious,suspicious,reject,False,True,True,True,True,True,True,True,9,contradicts,"CONTRADICTS
+Claim: “I moved it to the phishing folder” conflicts with Folder: Inbox.",,False,"['classify_email_text', 'check_sender_domain', 'check_url', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'coach_user', 'log_training_event', 'escalate_to_security']",2,yes,"yes
+The reply claims “I moved it to the phishing folder,” but the folder state is still Inbox.",False,
+C-30,E-030,borderline,legitimate,suspicious,suspicious,approve,False,True,True,False,False,True,True,True,6,consistent,"CONSISTENT
+Claim: “moved to the Phishing folder” matches Folder: Phishing.",,True,"['classify_email_text', 'check_sender_domain', 'get_user_profile', 'record_verdict', 'move_to_phishing_folder', 'log_training_event']",2,yes,"yes
+
+The claim “moved to the Phishing folder” matches the folder, but there is no contradiction; however, the reply makes no claim about security-queue or training-log actions, so none of the stated actions conflict with the state.",False,

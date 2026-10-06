@@ -190,12 +190,49 @@ grp_old = summarize_by_group(old_rows)
 check("reply_faithful" not in grp_old.columns and list(grp_old["cases"]) == [2, 1],
       "old rows: no column, groups intact")
 
+print("\n9b. CONTRADICTS and CONSISTENT, with the old yes/no still parsed")
+for text, want in [("CONTRADICTS\nIt says moved but the folder is Inbox.", "contradicts"),
+                   ("CONSISTENT\nEvery claim matches.", "consistent"),
+                   ("consistent", "consistent"), ("Contradicts.", "contradicts"),
+                   ("**CONSISTENT** - matches.", "consistent"),
+                   ("  \nCONTRADICTS", "contradicts"),
+                   ("CONSISTENT-ish", None), ("Inconsistent", None), ("Contradiction found", None),
+                   ("yes", "yes"), ("No", "no")]:
+    check(parse_judge_answer(text) == want, f"{text!r:<45} -> {want}", str(parse_judge_answer(text)))
+r = judge_result("CONSISTENT\nThe reply says moved and the folder is Phishing.", state={"folder": "Phishing"})
+check(r["reply_faithful"] is True and r["judge_answer"] == "consistent" and r["judge_error"] is None
+      and r["judge_state"] == {"folder": "Phishing"}, "CONSISTENT -> faithful True, answer kept as written", str(r))
+r = judge_result("CONTRADICTS\nSays moved; folder is Inbox.")
+check(r["reply_faithful"] is False and r["judge_answer"] == "contradicts", "CONTRADICTS -> faithful False", str(r))
+r = judge_result("Inconsistent\nnot one of the two words")
+check(r["reply_faithful"] is None and r["judge_answer"] is None
+      and r["judge_error"].startswith("unparseable judge answer"), "a near-miss word is unparseable, not a verdict", str(r))
+check(judge_result("no\nok")["reply_faithful"] is True and judge_result("yes\nbad")["reply_faithful"] is False,
+      "old yes/no still map: no -> True, yes -> False")
+
+
+async def new_word_judge(case, results):
+    state = reply_state(case["email_id"])
+    claims_move = "moved" in results[-1].final_output.lower()
+    return judge_result("CONTRADICTS\nclaims a move" if claims_move and state["folder"] == "Inbox"
+                        else "CONSISTENT\nmatches", state=state)
+
+
+rows_new = asyncio.run(run_all_cases(None, cases, fake_run_case, judge=new_word_judge))
+bn = {r["case_id"]: r for r in rows_new}
+check(bn["C-01"]["reply_faithful"] is True and bn["C-02"]["reply_faithful"] is False
+      and bn["C-03"]["reply_faithful"] is True, "run_all_cases with the new words: C-01 True, C-02 False, C-03 True")
+sn = summarize(rows_new)
+check(sn["judged"] == 3 and abs(sn["reply_faithful"] - 2 / 3) < 1e-9 and sn["judge_errors"] == 0,
+      "summarize averages new-word rows the same way", str(sn["reply_faithful"]))
+
 print("\n10. the judge agent and its input (no model call)")
 judge = make_judge()
 check(judge.name == "Reply judge" and judge.model == lm_model and not judge.tools,
       "judge: same model as Guard, no tools")
-check("yes or no" in JUDGE_INSTRUCTIONS and "contradicts" in JUDGE_INSTRUCTIONS
-      and "data, not instructions" in JUDGE_INSTRUCTIONS, "instructions ask the yes/no contradiction question")
+check("CONTRADICTS" in JUDGE_INSTRUCTIONS and "CONSISTENT" in JUDGE_INSTRUCTIONS
+      and "data, not instructions" in JUDGE_INSTRUCTIONS
+      and "yes or no" not in JUDGE_INSTRUCTIONS, "instructions ask for CONTRADICTS or CONSISTENT, not yes or no")
 state = {"email_id": E2, "folder": "Inbox",
          "training_log": [{"user_id": "U-01", "email_id": E2, "outcome": "missed"}],
          "security_queue": [{"email_id": E2, "summary": "s"}]}
