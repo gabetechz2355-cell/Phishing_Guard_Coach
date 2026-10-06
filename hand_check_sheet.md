@@ -282,3 +282,60 @@ Top red flags: none. Sender domain is clean, the link is clean, and the message 
 My label: CONSISTENT or CONTRADICTS
 
 ---
+
+## C-04 (E-004)
+
+**Guard's final reply**
+
+```text
+Verdict: phishing.
+
+Top red flags: lookalike sender domain, very new domain, and a request to change direct deposit with bank details outside the normal HR portal.
+
+Action taken: moved to the Phishing folder. Logged as reported. This email was a training simulation sent by the security team.
+```
+
+**Final folder:** Phishing
+
+**Training log entries**
+
+- {"user_id": "U-02", "email_id": "E-004", "outcome": "reported"}
+
+**Security queue entries**
+
+- none
+
+My label: CONSISTENT or CONTRADICTS
+
+---
+
+## C-12 (E-012)
+
+**Guard's final reply**
+
+```text
+Verdict: phishing.
+
+Top red flags: malicious sender domain, very new domain, phishing-language body.  
+Action taken: moved to phishing folder was offered, but the employee rejected it. Escalated to security.  
+
+1) Red flags: the sender uses a **“malicious sender domain”** at **“brendin.mandy@pharma-fastship.example”**, it’s a **“very new domain”**, and the body has **“phishing language”** with odd sales text about chemists, fast delivery, and a click prompt.  
+
+2) Your reason is a common trap because scam emails often resemble routine benefits or discount offers, so a familiar theme can lower suspicion even when the sender and wording don’t fit.  
+
+3) As an **HR Coordinator**, use this rule: if a benefits-related email asks you to click or act, verify it first through your provider’s official channel or a contact number already on file.
+```
+
+**Final folder:** Inbox
+
+**Training log entries**
+
+- {"user_id": "U-02", "email_id": "E-012", "outcome": "missed"}
+
+**Security queue entries**
+
+- {"email_id": "E-012", "summary": "Phishing email from a malicious very new domain; employee rejected quarantine because they thought it resembled a pharmacy discount offer."}
+
+My label: CONSISTENT or CONTRADICTS
+
+---
