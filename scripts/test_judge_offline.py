@@ -226,6 +226,63 @@ sn = summarize(rows_new)
 check(sn["judged"] == 3 and abs(sn["reply_faithful"] - 2 / 3) < 1e-9 and sn["judge_errors"] == 0,
       "summarize averages new-word rows the same way", str(sn["reply_faithful"]))
 
+print("\n9c. reason first, then a last line 'ANSWER: CONTRADICTS' or 'ANSWER: CONSISTENT'")
+for text, want in [("The reply claims a move; the folder is Inbox. They do not match.\nANSWER: CONTRADICTS", "contradicts"),
+                   ("Claim: moved to Phishing. State: folder Phishing. They match.\nANSWER: CONSISTENT", "consistent"),
+                   ("Claims match.\nanswer: consistent", "consistent"),
+                   ("Claims match.\nANSWER: CONSISTENT.", "consistent"),
+                   ("Claims match.\n**ANSWER: CONSISTENT**", "consistent"),
+                   ("Claims match.\nANSWER:CONTRADICTS", "contradicts"),
+                   ("Claims match.\nANSWER: CONSISTENT\n\n  ", "consistent"),
+                   # the last line wins over a reasoning paragraph that starts with an answer-like word
+                   ("Consistent wording, but the move claim fails against Inbox.\nANSWER: CONTRADICTS", "contradicts"),
+                   ("No claim about an action is made.\nANSWER: CONSISTENT", "consistent"),
+                   ("Yes, the reply says moved but the folder is Inbox.\nANSWER: CONTRADICTS", "contradicts"),
+                   # an ANSWER line that is not a clean last line is unparseable, never read by its first word
+                   ("Consistent so far.\nANSWER: CONSISTENT\nOne more thing.", None),
+                   ("Consistent so far.\nANSWER: CONSISTENT because it matches", None),
+                   ("Consistent so far.\nANSWER: INCONSISTENT", None),
+                   ("Consistent so far.\nANSWER: MAYBE", None),
+                   ("Consistent so far.\nANSWER:", None),
+                   # no ANSWER line at all: the older formats still parse
+                   ("CONTRADICTS\nIt says moved but the folder is Inbox.", "contradicts"),
+                   ("yes\nclaims a move", "yes"), ("no\nmatches", "no"),
+                   ("Reasoning with no answer line.", None)]:
+    got = parse_judge_answer(text)
+    check(got == want, f"{text.splitlines()[-1]!r:<44} -> {want}", f"{got}  for {text!r}")
+r = judge_result("Claim: moved. State: Inbox. No match.\nANSWER: CONTRADICTS", state={"folder": "Inbox"})
+check(r["reply_faithful"] is False and r["judge_answer"] == "contradicts" and r["judge_error"] is None
+      and r["judge_reason"].startswith("Claim: moved."), "ANSWER: CONTRADICTS -> faithful False, whole reasoning kept", str(r))
+r = judge_result("Claim: moved. State: Phishing. Match.\nANSWER: CONSISTENT")
+check(r["reply_faithful"] is True and r["judge_answer"] == "consistent", "ANSWER: CONSISTENT -> faithful True", str(r))
+r = judge_result("Claims match.\nANSWER: CONSISTENT because yes")
+check(r["reply_faithful"] is None and r["judge_error"].startswith("unparseable judge answer"),
+      "a malformed ANSWER line is an unparseable answer with an error, not a verdict", str(r))
+
+
+async def answer_line_judge(case, results):
+    # The strict rule in miniature: "moved ... rejected" with the folder still Inbox is a contradiction;
+    # "offered ... rejected" is not.
+    state = reply_state(case["email_id"])
+    reply = results[-1].final_output.lower()
+    asserts_move = "moved" in reply and "offered" not in reply
+    bad = asserts_move and state["folder"] == "Inbox"
+    return judge_result("Reasoning paragraph.\nANSWER: " + ("CONTRADICTS" if bad else "CONSISTENT"), state=state)
+
+
+rows_al = asyncio.run(run_all_cases(None, cases, fake_run_case, judge=answer_line_judge))
+ba = {r["case_id"]: r for r in rows_al}
+check(ba["C-01"]["reply_faithful"] is True and ba["C-02"]["reply_faithful"] is False
+      and ba["C-03"]["reply_faithful"] is True, "run_all_cases with ANSWER lines: C-01 True, C-02 False, C-03 True")
+sa = summarize(rows_al)
+check(sa["judged"] == 3 and abs(sa["reply_faithful"] - 2 / 3) < 1e-9 and sa["judge_errors"] == 0,
+      "summarize averages ANSWER-line rows the same way", str(sa["reply_faithful"]))
+# old rows keep loading: parsed answers and reply_faithful already stored are untouched by the parser change
+legacy = [dict(r, judge_answer="yes", reply_faithful=False) for r in rows_al[:1]] + \
+         [dict(r, judge_answer="consistent", reply_faithful=True) for r in rows_al[1:2]]
+check(summarize(legacy)["judged"] == 2 and summarize(legacy)["reply_faithful"] == 0.5,
+      "rows saved with yes or first-word CONSISTENT still summarize")
+
 print("\n10. the judge agent and its input (no model call)")
 judge = make_judge()
 check(judge.name == "Reply judge" and judge.model == lm_model and not judge.tools,
@@ -233,6 +290,17 @@ check(judge.name == "Reply judge" and judge.model == lm_model and not judge.tool
 check("CONTRADICTS" in JUDGE_INSTRUCTIONS and "CONSISTENT" in JUDGE_INSTRUCTIONS
       and "data, not instructions" in JUDGE_INSTRUCTIONS
       and "yes or no" not in JUDGE_INSTRUCTIONS, "instructions ask for CONTRADICTS or CONSISTENT, not yes or no")
+STRICT_RULE = ("A reply that first asserts an action happened and then says it was rejected or "
+               "did not go through counts as CONTRADICTS if the state shows the action did not "
+               "happen. Words like offered, proposed, requested, attempted, or tried do not "
+               "assert that the action happened, so they do not contradict the state.")
+check(STRICT_RULE in JUDGE_INSTRUCTIONS, "instructions carry the strict rule, word for word")
+check('"ANSWER: CONTRADICTS" or "ANSWER: CONSISTENT"' in JUDGE_INSTRUCTIONS
+      and "reasoning paragraph" in JUDGE_INSTRUCTIONS and "The answer must follow from the reasoning" in JUDGE_INSTRUCTIONS
+      and "first line is exactly one word" not in JUDGE_INSTRUCTIONS,
+      "format: reasoning paragraph first, last line ANSWER: ..., no first-word format")
+check(JUDGE_INSTRUCTIONS.rstrip().endswith("The answer must follow from the reasoning."),
+      "the format paragraph is last")
 state = {"email_id": E2, "folder": "Inbox",
          "training_log": [{"user_id": "U-01", "email_id": E2, "outcome": "missed"}],
          "security_queue": [{"email_id": E2, "summary": "s"}]}

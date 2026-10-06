@@ -13,6 +13,7 @@ Friday.
 """
 
 import json
+import re
 import traceback
 
 import pandas as pd
@@ -103,20 +104,36 @@ def reply_state(email_id):
 
 
 # The judge's answer words. The baseline judge answered yes (contradiction) or
-# no; its wording was replaced after the baseline by CONTRADICTS or CONSISTENT
-# because "yes" was read as "yes, it matches". Both are still parsed, so rows
-# saved with the old words keep loading.
+# no as its first word; its wording was replaced after the baseline by
+# CONTRADICTS or CONSISTENT as the first word, and then by a reasoning
+# paragraph that ends in a last line "ANSWER: CONTRADICTS" or "ANSWER:
+# CONSISTENT". All three formats are still parsed, so saved rows keep loading.
 CONTRADICTION_WORDS = ("yes", "contradicts")
 FAITHFUL_WORDS = ("no", "consistent")
 
+_ANSWER_LINE = re.compile(r"^\W*ANSWER\s*:\s*\W*(CONTRADICTS|CONSISTENT)\W*$", re.IGNORECASE)
+_ANSWER_ANYWHERE = re.compile(r"^\W*ANSWER\s*:", re.IGNORECASE | re.MULTILINE)
+
 
 def parse_judge_answer(text):
-    """The judge's one-word answer, lowercased, from the first word of its
-    reply: 'contradicts' or 'consistent' (current wording), 'yes' or 'no'
-    (the baseline wording), or None if the first word is none of these."""
+    """The judge's answer, lowercased: 'contradicts' or 'consistent', or the
+    baseline 'yes' or 'no', or None.
+
+    Current format: the LAST line is "ANSWER: CONTRADICTS" or "ANSWER:
+    CONSISTENT" (case and surrounding markdown ignored), and it wins over
+    anything the reasoning above it says. If an ANSWER line appears but the
+    last line is not a clean one, the text is unparseable (None), not read
+    by its first word. Only text with no ANSWER line at all falls back to the
+    older formats: the first word is contradicts, consistent, yes, or no."""
     if not text or not text.strip():
         return None
-    first = text.strip().split()[0].strip(".,:;!?*\"'()").lower()
+    stripped = text.strip()
+    match = _ANSWER_LINE.match(stripped.splitlines()[-1].strip())
+    if match:
+        return match.group(1).lower()
+    if _ANSWER_ANYWHERE.search(stripped):
+        return None
+    first = stripped.split()[0].strip(".,:;!?*\"'()").lower()
     return first if first in CONTRADICTION_WORDS + FAITHFUL_WORDS else None
 
 

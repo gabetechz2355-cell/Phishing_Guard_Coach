@@ -10,7 +10,12 @@ reason, and reply_faithful as old_*. results/latest.json is not touched.
 
 Cost: one judge call per saved row (30 for the baseline).
 
-Run:  .venv/Scripts/python.exe scripts/rejudge.py [results/20261006-113554-baseline.json]
+Outputs are named <source>-rejudged-<tag>.json and .csv. The tag is required
+and an existing output is never overwritten, so each judge version keeps its
+own files (the first re-judge, with the word-first wording, is the untagged
+<source>-rejudged.json).
+
+Run:  .venv/Scripts/python.exe scripts/rejudge.py --tag reasonfirst [results/20261006-113554-baseline.json]
 """
 
 import asyncio
@@ -54,7 +59,11 @@ async def rejudge_row(judge, row):
             traceback.format_exception_only(type(exc), exc)).strip())
 
 
-async def main(source):
+async def main(source, tag, note):
+    name = f"{source.stem}-rejudged-{tag}"
+    if any((source.parent / f"{name}{ext}").exists() for ext in (".json", ".csv")):
+        print(f"results/{name}.* already exists; pick another --tag. Nothing was run.")
+        sys.exit(2)
     old = json.loads(source.read_text(encoding="utf-8"))
     judge = make_judge()
     started = time.time()
@@ -82,7 +91,8 @@ async def main(source):
            "old_summary": old["summary"], "summary": summary,
            "by_group": by_group.reset_index().to_dict(orient="records"),
            "changed_cases": diffs, "rows": rows}
-    name = source.stem + "-rejudged"
+    out["judge_wording"] = note or out["judge_wording"]
+    out["tag"] = tag
     (source.parent / f"{name}.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
     pd.DataFrame(rows).drop(columns=["final_output", "error", "judge_state"]).to_csv(
         source.parent / f"{name}.csv", index=False)
@@ -95,5 +105,10 @@ async def main(source):
 
 
 if __name__ == "__main__":
-    src = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "results" / "20261006-113554-baseline.json"
-    asyncio.run(main(src))
+    import argparse
+    ap = argparse.ArgumentParser(description="Re-run the reply judge only over a saved results file.")
+    ap.add_argument("source", nargs="?", default=str(ROOT / "results" / "20261006-113554-baseline.json"))
+    ap.add_argument("--tag", required=True, help="suffix for the output files; an existing output is never overwritten")
+    ap.add_argument("--note", default="", help="one line naming the judge wording used, saved in the output")
+    a = ap.parse_args()
+    asyncio.run(main(Path(a.source), a.tag, a.note))
