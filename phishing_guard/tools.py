@@ -21,6 +21,8 @@ from agents.tool_guardrails import ToolGuardrailFunctionOutput, tool_input_guard
 from .classifier import load_classifier, top_words
 from .world import MAILBOX, SECURITY_QUEUE, THREAT_INTEL, TRAINING_LOG, USERS
 
+# Loaded once at import so the first classify_email_text call does not pay
+# the joblib load mid-run.
 clf = load_classifier()
 
 
