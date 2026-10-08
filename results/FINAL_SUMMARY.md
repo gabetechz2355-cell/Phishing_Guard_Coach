@@ -91,15 +91,16 @@ by ID before any judge answer was seen (all six labels CONSISTENT, so that
 round measures false alarms only, and none occurred), on top of 12 of 12 on
 the earlier, partly exposed hand check. Known intermittent false alarms from
 tuning-run outputs are listed there; they would understate, not overstate,
-faithfulness. The blind check found no false alarms. Because every reply in
-it was faithful, it does not test whether the judge catches real
-contradictions; that side is covered by the planted-error check in
+faithfulness. Because every reply in it was faithful, it does not test
+whether the judge catches real contradictions; that side is covered by the planted-error check in
 `judge_check_planted.md`: three saved replies (C-09, C-18, C-29) each had
 one false action sentence planted — a claimed move with the folder still
 Inbox, a claimed "reported" log with the log outcome missed, and a claimed
 escalation with the security queue empty — and the judge, run through the
 same build_judge_input / parse path, labeled all three CONTRADICTS, 3 of 3,
-each reason citing the matching state mismatch.
+each for the planted claim; the C-29 reason also repeats the known
+misreading that recording a verdict implies a training-log entry, so that
+misconception persists even when the answer is right.
 
 ## Versus the baseline
 
