@@ -58,6 +58,47 @@
   - Reading the 12/12 correctly: the judge was not edited after seeing it and must not be. But C-11 and C-12 are the cases that motivated this revision, and five of the twelve cases were partly exposed to judge answers before the human labelled them, so 12/12 is agreement on cases that were already in view, not an independent test. The other 18 cases have no human label.
   - reply_faithful, third judge: 0.73 overall (22/30; baseline yes/no 0.53, second judge 0.60). By group: clear_phish 0.7, clear_legit 1.0, borderline 0.5 (baseline 0.4, 0.9, 0.3). Compared with the baseline judge, six cases changed, all from contradiction to consistent: C-04, C-06, C-11, C-27, C-30 (all in the 12) and C-18 (not hand-labelled). Compared with the second judge, C-06, C-11, C-18 went to consistent and C-12 went to consistent. Use these third-judge numbers as the before in later runs, so before and after use one judge.
 
+- 2026-10-07: Tuning session on branch `tuning` (from master; rollback tag
+  `meeting-demo-oct6`; end state tagged `guard-final`). Changes were chosen from
+  dev-set failures only (C-01 to C-10); every run was all 30 cases with the
+  reason-first judge, one change at a time. Runs in order:
+  - `20261006-113554-baseline-rejudged-reasonfirst` (the before for all tuning
+    runs): verdict 0.93, adherence 0.83, completion 0.77, precision 0.75,
+    recall 1.00, F1 0.86, reply_faithful 0.73.
+  - `20261007-151303-change1-escalation` (attempt 1a, REVERTED): escalation
+    condition folded into FOLLOW UP's approve sentence. Fixed the targeted
+    skip where follow-up ran, but Guard stopped right after an approved move
+    in 5 of 10 approve cases (C-04, C-10, C-13, C-15, C-23); completion
+    0.77 -> 0.73. Reverted before commit; results kept for the record.
+  - `20261007-154030-change1b-ordered` (fix 3, KEPT, commit 2d2303d): approve
+    branch as an ordered sequence (first log 'reported', then escalate if
+    suspicious, only after both reply); reject branch ends with an explicit
+    escalate. Adherence 0.83 -> 0.97, completion 0.77 -> 0.87; all 4
+    suspicious+approve cases escalated; dev set clean on all six code metrics.
+  - `20261007-205125-change2-rejected-wording` (fix 4, KEPT, commit fd75429):
+    FOLLOW UP states a rejected move leaves the email in the Inbox; REPLY must
+    not say it was moved. Rejected-move contradictions 3 -> 0 across the 10
+    reject cases; adherence 1.00, completion 0.90, reply_faithful 0.93.
+  - Net vs the re-judged baseline: verdict 0.93 -> 0.90, adherence
+    0.83 -> 1.00, completion 0.77 -> 0.90, precision 0.75 -> 0.74, recall
+    1.00 -> 0.93, F1 0.86 -> 0.82, reply_faithful 0.73 -> 0.93. The verdict,
+    precision, and recall movement sits entirely in borderline cases that flap
+    between runs with no instruction cause (C-18, C-23, C-27, C-28, C-29 each
+    flipped at least once across the four runs); treat single-run deltas on
+    those metrics as noise. Candidate 3 (a DECIDE precision line) was not
+    attempted; if tried, judge it on a three-pass run.
+  - Precision vs the answer key, by design: on borderline truly-legitimate
+    cases the key expects 'suspicious' (C-09, C-28, C-29), so the key-correct
+    verdict counts against flag precision, which scores flags against true
+    labels. Precision has a ceiling below 1.0 while the key stands; report
+    that rather than tune it away.
+  - Judge misapplications seen (judge not edited): C-06 (1b run) flagged
+    "attempted to move" as a contradiction although the strict rule says
+    attempted does not assert the move happened; C-22 (1b run) and C-23 (fix 4
+    run) flagged "recorded the verdict" against the empty training log, but
+    record_verdict writes MAILBOX, not the training log. Weigh these when
+    reading reply_faithful; unexposed hand labels remain the fix.
+
 ## Next
 
 - Hand-label some of the 18 unlabelled cases, chosen by case ID before the judge's answers are shown, so `reply_faithful` has at least some agreement evidence that is not about cases already in view. C-18 changed from contradiction to consistent and has no human label.
