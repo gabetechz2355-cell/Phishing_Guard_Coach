@@ -184,6 +184,9 @@ def score_case(case, results):
              "coach_user" in names,
              any(q["email_id"] == eid for q in SECURITY_QUEUE))
 
+    # Argument correctness: the sender check got the From domain, every url
+    # check got a link that is really in the email, and every ID tool got
+    # this case's email ID. Tools the condition does not name pass through.
     domain = email["from_addr"].split("@")[-1].lower()
     args_ok = all(
         (c["name"] != "check_sender_domain"
