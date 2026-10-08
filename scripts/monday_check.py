@@ -35,6 +35,7 @@ PUNCT = ".,;:!?()\"'*"
 
 
 def _words(text):
+    """Lowercased words with surrounding punctuation stripped."""
     return [w.strip(PUNCT).lower() for w in text.split() if w.strip(PUNCT)]
 
 
@@ -121,6 +122,7 @@ def check_trace(case, results):
 
 
 async def main(case_ids, repeat, quiet):
+    """Run each case `repeat` times, print its checks, exit 1 on any failure."""
     guard = make_guard_full()
     rows = []
     for case_id in case_ids:
