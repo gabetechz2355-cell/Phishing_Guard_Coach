@@ -60,6 +60,7 @@ async def rejudge_row(judge, row):
 
 
 async def main(source, tag, note):
+    """Re-judge every saved row, keep the old columns as old_*, save both."""
     name = f"{source.stem}-rejudged-{tag}"
     if any((source.parent / f"{name}{ext}").exists() for ext in (".json", ".csv")):
         print(f"results/{name}.* already exists; pick another --tag. Nothing was run.")
