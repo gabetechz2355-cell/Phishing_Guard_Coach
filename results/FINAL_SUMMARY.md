@@ -102,6 +102,17 @@ each for the planted claim; the C-29 reason also repeats the known
 misreading that recording a verdict implies a training-log entry, so that
 misconception persists even when the answer is right.
 
+## Lesson quality
+
+Across the 10 reject-case lessons from pass 1, my hand labels pass 38 of
+40 boxes under the PLAN.md criteria (names the labeled red flags, gives a
+usable rule, invents nothing, 120 words or fewer), with 8 of 10 lessons
+passing all four; the two failures are a missing "reply-to differs from
+sender" flag (C-02) and one invented detail (C-05). The lesson judge
+agreed with the hand labels on 39 of 40 boxes, catching the invented
+detail but missing the missing flag, with no false alarms on the 38
+passing boxes. Full comparison in `lesson_check.md`.
+
 ## Versus the baseline
 
 The tuning session's two kept changes (ordered FOLLOW UP with per-branch
