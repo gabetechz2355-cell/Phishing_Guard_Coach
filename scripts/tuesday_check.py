@@ -97,6 +97,7 @@ def print_summary(summary, by_group, table, baseline):
 
 
 async def main(case_ids, tag, verbose, use_judge=True, save=True):
+    """Run, score, and judge the cases, print the tables, save under results/."""
     cases = {cid: TEST_CASES[cid] for cid in case_ids}
     guard = make_guard_full()
     judge = make_judge_fn() if use_judge else None
