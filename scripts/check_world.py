@@ -32,6 +32,7 @@ problems = []
 
 
 def check(cond, msg):
+    """Collect a failure instead of stopping, so one run reports everything."""
     if not cond:
         problems.append(msg)
 
