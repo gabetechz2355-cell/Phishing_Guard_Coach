@@ -32,6 +32,7 @@ passed = failed = 0
 
 
 def check(cond, label, detail=""):
+    """Print a pass/fail line and count it; the script exits on the total."""
     global passed, failed
     if cond:
         passed += 1
@@ -44,11 +45,13 @@ def check(cond, label, detail=""):
 # ---- fake trace builders ----------------------------------------------------
 
 def _call(n, name, args, kind="tool_call_item"):
+    """One fake tool-call (or approval) item with a deterministic call_id."""
     return SimpleNamespace(type=kind, raw_item=SimpleNamespace(
         type="function_call", name=name, arguments=json.dumps(args), call_id=f"call_{n}"))
 
 
 def _output(n, text):
+    """One fake tool-output item; raw_item is a dict, as the SDK returns it."""
     return SimpleNamespace(type="tool_call_output_item",
                            raw_item={"call_id": f"call_{n}"}, output=text)
 
@@ -79,6 +82,7 @@ def fake_results(calls, final_output="done", pause_at=None):
 
 
 def set_world(eid, verdict=None, folder="Inbox", logged=None, escalated=False):
+    """Reset, then put one email's world state exactly where a test wants it."""
     reset_world()
     if verdict:
         MAILBOX[eid]["verdict"] = verdict
@@ -125,6 +129,7 @@ LEGIT_TRACE = [
 
 
 def all_true(score):
+    """True when every code-scored metric in the score dict passed."""
     return all(score[m] for m in METRIC_COLUMNS)
 
 
@@ -225,6 +230,7 @@ print("\n11. run_all_cases keeps going past a case that raises, and summarize co
 
 
 async def fake_run_case(guard, case):
+    """Stand-in run_case: C-02 raises, the others return canned traces."""
     eid = case["email_id"]
     if eid == E2:
         raise RuntimeError("boom")
