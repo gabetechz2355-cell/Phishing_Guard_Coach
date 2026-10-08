@@ -75,6 +75,7 @@ NOTES = [
 
 
 def parse_hand_labels(text):
+    """Case IDs, hand labels, and notes from the sheet; nothing else is read."""
     blocks = re.split(r"(?=^## C-)", text, flags=re.MULTILINE)[1:]
     cases = []
     for block in blocks:
@@ -92,10 +93,12 @@ def parse_hand_labels(text):
 
 
 def fmt(answers):
+    """The four answers on one line, in criteria order."""
     return " ".join(f"{k}={answers[k]}" for k in CRITERIA) if answers else "unparseable"
 
 
 async def main():
+    """Judge each lesson, compare with the hand labels, write the report."""
     cases = parse_hand_labels(SHEET.read_text(encoding="utf-8"))
     pass1 = sorted(ROOT.glob("results/*-final-pass1.json"))
     if len(pass1) != 1:
