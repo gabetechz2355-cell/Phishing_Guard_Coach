@@ -92,6 +92,9 @@ def _save_holdout_rows(X_test, y_test, probs, holdout_path: Path, seed: int,
 
 # ---- loading and explanation, used by the classify_email_text tool ----------
 
+# Module-level cache: the joblib is loaded once per process, on first use.
+# _PARTS keeps the fitted vectorizer, the regression, and the vocabulary so
+# top_words does not re-extract them on every call.
 _MODEL = None
 _PARTS = None
 
@@ -112,6 +115,9 @@ def top_words(text, k=5):
     """Words in this email that pushed the score toward phishing the most."""
     load_classifier()
     vec, lr, vocab = _PARTS
+    # Per-word contribution to the decision score: the email's TF-IDF value
+    # for each vocabulary word times that word's learned weight. Positive
+    # contributions push toward phishing; only those are reported.
     contrib = vec.transform([text]).multiply(lr.coef_[0]).toarray()[0]
     best = contrib.argsort()[::-1][:k]
     return [str(vocab[i]) for i in best if contrib[i] > 0]
