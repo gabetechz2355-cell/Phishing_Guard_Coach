@@ -20,6 +20,8 @@ MODEL_PATH = ROOT / "phish_clf.joblib"
 # to "", which is falsy, so the getpass fallback below still triggers.
 load_dotenv(ROOT / ".env")
 
+# The tutorial's model. Guard, Coach, and both judges all run on it, so one
+# constant changes every agent at once.
 lm_model = "gpt-5.4-mini"
 
 set_tracing_disabled(True)
