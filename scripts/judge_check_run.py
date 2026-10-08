@@ -45,6 +45,7 @@ SECTION = re.compile(
 
 
 def parse_sheet(text):
+    """The sheet's cases: state dict, reply, and hand label per section."""
     blocks = re.split(r"(?=^## C-)", text, flags=re.MULTILINE)[1:]
     cases = []
     for block in blocks:
@@ -66,6 +67,7 @@ def parse_sheet(text):
 
 
 async def main():
+    """Judge each saved reply and print the answer beside the hand label."""
     cases = parse_sheet(INPUTS.read_text(encoding="utf-8"))
     print(f"Judging {len(cases)} saved replies (Guard not run).")
     judge = make_judge()
