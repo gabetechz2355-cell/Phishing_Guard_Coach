@@ -38,6 +38,8 @@ BOXES = ("names the labeled red flags: ___   gives a usable rule: ___   "
 
 
 def extract_lesson(reply: str) -> str | None:
+    """The lesson part of a reply: from the "Lesson:" header or the first
+    numbered item to the end, or None when the reply has neither."""
     m = LESSON_START.search(reply)
     if not m:
         return None
@@ -47,6 +49,7 @@ def extract_lesson(reply: str) -> str | None:
 
 
 def main():
+    """Build the sheet from the pass1 rows and the source data."""
     if len(RESULTS) != 1:
         print(f"Expected one results/*-final-pass1.json, found {len(RESULTS)}.")
         sys.exit(2)
