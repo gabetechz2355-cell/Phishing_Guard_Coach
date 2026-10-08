@@ -38,6 +38,7 @@ OUT = ROOT / "results" / "judge_check_6_inputs.md"
 
 
 def section(case_id, case, reply, state):
+    """One case's sheet section: reply, state, and a blank hand-label line."""
     log = json.dumps(state["training_log"], indent=2) if state["training_log"] else "none"
     queue = json.dumps(state["security_queue"], indent=2) if state["security_queue"] else "none"
     return (
@@ -51,6 +52,7 @@ def section(case_id, case, reply, state):
 
 
 async def main():
+    """Run the six cases and write the blind hand-label sheet once."""
     if OUT.exists():
         print(f"{OUT.relative_to(ROOT)} already exists; refusing to overwrite.")
         sys.exit(2)
