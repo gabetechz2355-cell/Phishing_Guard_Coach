@@ -1,6 +1,6 @@
 {
-  "started": "2026-10-07T15:40:30",
-  "elapsed_s": 323,
+  "started": "2026-10-07T20:51:25",
+  "elapsed_s": 318,
   "cases": [
     "C-01",
     "C-02",
@@ -35,18 +35,18 @@
   ],
   "summary": {
     "verdict_correct": 0.9,
-    "workflow_adherence": 0.9666666666666667,
-    "task_completion": 0.8666666666666667,
+    "workflow_adherence": 1.0,
+    "task_completion": 0.9,
     "tool_correctness": 1.0,
     "argument_correctness": 1.0,
     "step_efficiency": 1.0,
-    "flag_precision": 0.8235294117647058,
+    "flag_precision": 0.7368421052631579,
     "flag_recall": 0.9333333333333333,
-    "flag_f1": 0.8749999999999999,
-    "mean_tool_calls": 6.2,
+    "flag_f1": 0.8235294117647058,
+    "mean_tool_calls": 6.533333333333333,
     "cases": 30,
     "errors": 0,
-    "reply_faithful": 0.9,
+    "reply_faithful": 0.9333333333333333,
     "judged": 30,
     "judge_errors": 0
   },
@@ -54,37 +54,37 @@
     {
       "category": "clear_phish",
       "verdict_correct": 1.0,
-      "workflow_adherence": 0.9,
-      "task_completion": 0.9,
-      "tool_correctness": 1.0,
-      "argument_correctness": 1.0,
-      "step_efficiency": 1.0,
-      "reply_faithful": 0.7,
-      "tool_calls": 7.3,
-      "cases": 10
-    },
-    {
-      "category": "clear_legit",
-      "verdict_correct": 1.0,
       "workflow_adherence": 1.0,
       "task_completion": 1.0,
       "tool_correctness": 1.0,
       "argument_correctness": 1.0,
       "step_efficiency": 1.0,
-      "reply_faithful": 1.0,
-      "tool_calls": 4.3,
+      "reply_faithful": 0.9,
+      "tool_calls": 7.3,
       "cases": 10
     },
     {
-      "category": "borderline",
-      "verdict_correct": 0.7,
+      "category": "clear_legit",
+      "verdict_correct": 0.9,
       "workflow_adherence": 1.0,
-      "task_completion": 0.7,
+      "task_completion": 0.9,
       "tool_correctness": 1.0,
       "argument_correctness": 1.0,
       "step_efficiency": 1.0,
       "reply_faithful": 1.0,
-      "tool_calls": 7.0,
+      "tool_calls": 4.8,
+      "cases": 10
+    },
+    {
+      "category": "borderline",
+      "verdict_correct": 0.8,
+      "workflow_adherence": 1.0,
+      "task_completion": 0.8,
+      "tool_correctness": 1.0,
+      "argument_correctness": 1.0,
+      "step_efficiency": 1.0,
+      "reply_faithful": 0.9,
+      "tool_calls": 7.5,
       "cases": 10
     }
   ],
@@ -360,10 +360,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 7,
-      "final_output": "Verdict: phishing.\n\nTop red flags: malicious sender domain, blocklisted malicious link, urgent password-expiry lure, Microsoft 365 impersonation.\n\nAction taken: moved to the Phishing folder.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: malicious sender domain, blocklisted malicious link, urgent password-expiration pressure, and no legitimate Microsoft domain. The email was moved to the Phishing folder.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was \u201cmoved to the Phishing folder,\u201d and the final state shows Folder: Phishing, so that matches. It does not claim any security-queue action or training-log action, so there is no conflict there.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email \u201cwas moved to the Phishing folder,\u201d and the folder state is Phishing, so that matches. It makes no claim about a security-queue escalation or training-log action, so there is no conflict with those state items.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-001",
         "folder": "Phishing",
@@ -406,10 +406,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 8,
-      "final_output": "Verdict: phishing.\n\nTop red flags: lookalike sender domain `billing@apex-supp1y.example`, request to change bank details for invoice payments, and a reply-by-email confirmation request.\n\nThe move was rejected by the employee.\n\n1) Red flags: \u201cbilling@apex-supp1y.example\u201d is a lookalike domain, and it asks to \u201cupdate records and remit payment to a new bank account\u201d plus \u201cconfirm by reply.\u201d The \u201crecent suspicious domain age\u201d adds risk.\n\n2) \u201cWe pay them every month\u201d is a common trap: familiar vendors can be impersonated, and routine payments can make a fake change request feel normal.\n\n3) Rule for Accounts Payable: never change bank details from an email alone. Verify any payment change through a trusted channel already on file before paying.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: lookalike sender domain `apex-supp1y.example` imitating `apexsupply.example`; request to change bank details for invoice payments; request to confirm by reply.\n\nI recommended moving it to Phishing, but you declined, so the email remains in the Inbox. Logged as a training simulation by security.\n\nRed flags: the sender uses the lookalike domain \u201capex-supp1y.example\u201d instead of \u201capexsupply.example\u201d; it asks to \u201cupdate payment records to a new bank\u201d; and it says to \u201cconfirm by reply.\u201d  \n\nThat trust cue is a common trap: seeing a familiar vendor name can override the warning signs, especially when a payment request fits your normal workflow.  \n\nRule for Accounts Payable: never change bank details from an email alone. Verify any payment-change request using a trusted contact method already on file before updating records.",
       "error": null,
-      "judge_answer": "consistent",
-      "judge_reason": "The reply claims the move was rejected by the employee; the folder state is Inbox, which is consistent with no move happening. It also mentions red flags and a phishing verdict, but those are not action claims. It does not claim any training-log or security-queue action beyond analysis.  \nANSWER: CONSISTENT",
+      "judge_answer": "contradicts",
+      "judge_reason": "The reply says it recommended moving the email to Phishing, but that only counts as a proposal, not an actual move, and the state shows the email is still in Inbox, so that matches. It says \u201cLogged as a training simulation by security,\u201d but the state shows a training-log entry with outcome \u201cmissed,\u201d not \u201creported\u201d or a simulation log, so that claim conflicts. It does not claim a security-queue action beyond the existing queue entry, which matches the state.\n\nANSWER: CONTRADICTS",
       "judge_state": {
         "email_id": "E-002",
         "folder": "Inbox",
@@ -423,12 +423,12 @@
         "security_queue": [
           {
             "email_id": "E-002",
-            "summary": "Training simulation: lookalike sender domain apex-supp1y.example, new bank details request, and reply-to mismatch for invoice payment change."
+            "summary": "Lookalike Apex Supply email requests invoice payment to new bank details and asks for reply confirmation; employee rejected phishing move."
           }
         ]
       },
       "judge_error": null,
-      "reply_faithful": true,
+      "reply_faithful": false,
       "tool_sequence": [
         "classify_email_text",
         "check_sender_domain",
@@ -458,10 +458,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 5,
-      "final_output": "Verdict: legitimate.\n\nTop red flags: none.  \nAction: no action taken.",
+      "final_output": "Verdict: legitimate.\n\nTop signals were clean sender domain, clean link, and consistent invoice details. No action taken.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims \u201cno action taken,\u201d which matches the state showing the email stayed in Inbox with no training-log entries and no security-queue entries. It makes no conflicting action claim.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims \u201cNo action taken,\u201d and the state shows the email stayed in the Inbox with no training-log entries and no security-queue entries, so that matches. The rest is about signals/verdict, not actions.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-003",
         "folder": "Inbox",
@@ -496,10 +496,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 6,
-      "final_output": "Verdict: phishing.\n\nTop red flags: suspicious lookalike sender domain, urgent request to change direct deposit, and sensitive payroll/banking data requested.\n\nAction taken: moved to the Phishing folder.\n\nThis email was a training simulation sent by the security team.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: suspicious sender domain, lookalike of harborfoods.example, and a request to change direct deposit with banking details.\n\nAction taken: I moved the email to the Phishing folder.\n\nLogged: this was a training simulation sent by the security team.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It also says the action taken was moving it, which is supported by the folder state. The statement that it was a training simulation is not an action claim, and there is no claim of security-queue escalation or logging beyond the move.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It claims a training log entry was made about a training simulation; the state does show a training-log entry with outcome \"reported,\" but not the specific simulation content, so there is no conflict with the action itself. It makes no claim that the security queue was used, and the queue is empty, which also matches.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-004",
         "folder": "Phishing",
@@ -541,10 +541,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 8,
-      "final_output": "Verdict: phishing.\n\nTop red flags: urgent request for five $200 gift cards, secrecy, and asking for the codes and receipts. The move to the phishing folder was rejected by the employee.\n\nLesson:\n1) Red flags: \u201cbuy five $200 gift cards,\u201d \u201cscratch off the codes, and email the codes and receipts,\u201d and \u201ckeep it secret until done.\u201d The pressure and \u201cexecutive impersonation\u201d are classic phishing signs.\n\n2) It\u2019s a common trap to trust a message because \u201cElena emails from her personal account when she travels.\u201d Real travel habits can make a request seem normal, which is why attackers copy familiar behavior.\n\n3) Rule for Regional Sales: for any urgent gift-card request from an executive, pause and verify through a known company channel before acting. This email is unconfirmed; call Elena using a number already on file.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: urgent gift-card request, secrecy, and asking for codes/receipts by email from a CEO impersonation target.\n\nI recommended moving it to the phishing folder, but you declined, so the email remains in the Inbox.\n\n1) Red flags: \u201crequesting five $200 gift cards, codes, and receipts\u201d and asking for \u201csecrecy.\u201d It also claims to be \u201cfrom CEO,\u201d a high-value impersonation target.\n\n2) The travel reason is a common trap: real people do sometimes use personal accounts, so the address alone can feel familiar even when the request is unusual. That familiarity can make the rest of the message seem safe.\n\n3) For Regional Sales: treat urgent gift-card requests from executives as a stop-and-check item. Verify through a known internal channel before buying anything or sharing codes.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the move to the phishing folder was rejected by the employee, which matches the email still being in Inbox. It also describes phishing red flags and a lesson, but those are not action claims. The training log has a missed entry, and the reply does not claim otherwise; the security queue has an entry, and the reply does not deny escalation.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email was recommended to be moved, but that is only a recommendation/offer and not a claim it happened, so it does not need a matching folder change. It says \u201cyou declined, so the email remains in the Inbox,\u201d which matches the folder state Inbox. It makes no claim about any training-log action, and the security queue entry exists as reflected by the escalation content in the state.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-005",
         "folder": "Inbox",
@@ -558,7 +558,7 @@
         "security_queue": [
           {
             "email_id": "E-005",
-            "summary": "Executive impersonation attempt asking for urgent purchase of five $200 gift cards, secrecy, and transmission of gift card codes and receipts."
+            "summary": "Phishing attempt impersonating CEO requesting five $200 gift cards, secrecy, and emailed codes/receipts; employee rejected the move, citing a familiar personal-account pattern."
           }
         ]
       },
@@ -593,10 +593,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 9,
-      "final_output": "Verdict: phishing.\n\nTop red flags: malicious sender domain, blocklisted malicious link, urgent request to pay a redelivery fee.\n\nAction: I flagged it and attempted to move it to the Phishing folder, but the employee rejected the move. Coaching:\n1) Red flags: the sender uses a **\u201cmalicious sender domain\u201d**: **\u201cnotices@parcel-track-updates.example\u201d**; it includes a **\u201cblocklisted malicious link\u201d**: **\u201chttps://parcel-track-updates.example/redeliver/88213\u201d**; and it pushes an **\u201curgent payment request\u201d** for **\u201ca $2.99 redelivery fee within 48 hours.\u201d** This matches a **\u201cdelivery scam pattern.\u201d**\n\n2) Expecting samples can make a delivery notice feel routine, which is a common trap. Phishing often uses something timely and plausible to get quick clicks before you verify.\n\n3) Rule for Regional Sales: if a shipment email asks for action or payment, verify it first through your supplier or carrier contact already on file. This email is unconfirmed and suspicious.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: malicious sender domain, blocklisted link, payment request, urgent 48-hour deadline.\n\nI recommended moving it to the Phishing folder, but you declined, so it remains in the Inbox.\n\n1) Red flags: the sender uses a suspicious address, \u201cnotices@parcel-track-updates.example\u201d; it includes a \u201cmalicious blocklisted link\u201d; and it asks for \u201ca $2.99 redelivery fee within 48 hours.\u201d  \n\n2) Expecting supplier samples is a common trap because it makes a delivery notice feel routine and lowers caution. That\u2019s understandable\u2014attackers rely on timing and plausible context.  \n\n3) Rule for Regional Sales: never use email links or pay delivery fees from an unexpected notice; verify any shipment using the supplier or carrier number already on file.",
       "error": null,
-      "judge_answer": "contradicts",
-      "judge_reason": "The reply claims it \u201cattempted to move it to the Phishing folder,\u201d but the final folder is still Inbox, so that action did not happen. It also says the employee rejected the move, which is consistent with the state\u2019s security-queue summary, but the move itself still did not occur. The reply does not claim any training-log or security-queue action besides the attempted move.  \nANSWER: CONTRADICTS",
+      "judge_answer": "consistent",
+      "judge_reason": "The reply says it \u201cremains in the Inbox,\u201d which matches the folder state. It also says \u201cI recommended moving it to the Phishing folder, but you declined,\u201d which is only a proposal/rejection and does not claim the move happened, so it does not conflict with the Inbox state. The training log has one entry with outcome \u201cmissed,\u201d and the reply makes no claim about logging. The security queue has an entry for E-006, and the reply makes no claim about escalation.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-006",
         "folder": "Inbox",
@@ -610,12 +610,12 @@
         "security_queue": [
           {
             "email_id": "E-006",
-            "summary": "Phishing email from a malicious sender domain with a blocklisted redelivery link requesting payment; user rejected the move."
+            "summary": "Phishing email impersonating parcel delivery, with a malicious sender domain and blocklisted link requesting a $2.99 redelivery fee."
           }
         ]
       },
       "judge_error": null,
-      "reply_faithful": false,
+      "reply_faithful": true,
       "tool_sequence": [
         "classify_email_text",
         "check_sender_domain",
@@ -646,10 +646,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 5,
-      "final_output": "Verdict: legitimate.\n\nTop signals: clean sender domain, clean link, and BrightPath Benefits is a known vendor for Marcus. No action was taken.",
+      "final_output": "Verdict: legitimate.\n\nTop signals were clean: sender domain is reputable and old, the link is clean, and this matches Marcus\u2019s normal vendor domain. No action was taken.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims \u201cNo action was taken,\u201d and the state shows the email stayed in Inbox with no training-log entries and no security-queue entries, so that matches. The other text is about signals/verdict and is not an action claim.\n\nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims \u201cNo action was taken,\u201d and the state matches that: the email is still in Inbox, with no training-log entries and no security-queue entries. The other statements are about signals/verdict, not actions.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-007",
         "folder": "Inbox",
@@ -684,10 +684,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 5,
-      "final_output": "Verdict: legitimate.\n\nWhat I saw: clean sender domain, clean intranet link, and the message matches Dana\u2019s normal vendor-related work. No action was taken.",
+      "final_output": "Verdict: legitimate.  \nRed flags: none.  \nNo action taken.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply makes one action claim: \u201cNo action was taken.\u201d The final state shows the email stayed in Inbox, with no training-log entries and no security-queue entries, so that claim matches the state. The rest is only a verdict and observations, not action claims.\n\nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims no action was taken. The state shows the email stayed in Inbox, with no training-log entries and no security-queue entries, so that claim matches. There are no other action claims.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-008",
         "folder": "Inbox",
@@ -699,8 +699,8 @@
       "tool_sequence": [
         "classify_email_text",
         "check_sender_domain",
-        "get_user_profile",
         "check_url",
+        "get_user_profile",
         "record_verdict"
       ],
       "segments": 1
@@ -722,10 +722,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 9,
-      "final_output": "Verdict: suspicious.\n\nRed flags: unknown sender domain; request for AP contact and billing details; external vendor asking for account setup data.\n\nMoved to Phishing folder: attempted, but Dana rejected the move.\n\n1) Red flags: the sender is an **\u201cunknown sender domain,\u201d** asks for **\u201cAP contact and billing details,\u201d** and is an **\u201cexternal vendor asking for account setup data.\u201d**\n\n2) Your reason is a common trap: meeting someone at an expo and asking for a catalog can make the email feel familiar, but attackers often borrow real events to seem legitimate.\n\n3) Rule for Accounts Payable: before sharing any new-account or billing info, treat the email as **unconfirmed** and verify it by contacting Green Valley Produce through a number or website already on file.",
+      "final_output": "Verdict: suspicious.\n\nTop red flags: unknown sender domain, request for AP contact and billing address, and an unverified vendor link.\n\nI recommended moving it to the phishing folder, but you declined, and the email remains in the Inbox.\n\n1) Red flags: \u201cunknown sender domain,\u201d \u201cGreen Valley Produce <sales@greenvalley-produce.example>,\u201d \u201clinked to a 2027 catalog,\u201d and a \u201cnew-account form with AP contact and billing address\u201d from a \u201cnew vendor.\u201d  \n2) Meeting them at the expo and asking for the catalog is a common trust trap: familiar context can make a new sender feel routine, even when the domain and link reputation aren\u2019t verified.  \n3) Rule for AP: before sending any AP contact or billing details, verify the vendor using a known-good contact from your records. This email is unconfirmed.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was \u201cmoved to Phishing folder\u201d only \u201cattempted, but Dana rejected the move,\u201d which matches the Inbox folder state. It makes no claim that the move actually succeeded, and the training log and security queue are not claimed on. The security-queue entry exists, but the reply does not say it was sent to the queue, so there is no conflict.\n\nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email remains in the Inbox, and the state shows Folder: Inbox, so that matches. It claims the email was recommended for phishing but you declined; that is only a proposed move/rejection, not a claim that the move happened, so it does not conflict. It makes no claim that anything was sent to the security queue, and the state does show a security-queue entry, but the reply doesn\u2019t deny that action. It also says nothing about the training log outcome, so the existing \u201cmissed\u201d log entry is not contradicted.\n\nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-009",
         "folder": "Inbox",
@@ -739,7 +739,7 @@
         "security_queue": [
           {
             "email_id": "E-009",
-            "summary": "Suspicious vendor email asking for AP contact and billing details via a new-account form; employee rejected the move."
+            "summary": "Suspicious vendor setup request from Green Valley Produce asking for AP contact and billing details; employee rejected quarantine because the vendor was reportedly met at an expo and the catalog was requested."
           }
         ]
       },
@@ -775,10 +775,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 7,
-      "final_output": "Verdict: suspicious.\n\nTop red flags: immediate remittance account change, request to redirect pending invoices 3310 and 3312, urgent language, and invoice/payment-fraud pattern.\n\nAction taken: moved to the Phishing folder, logged the report, and escalated to security.",
+      "final_output": "Verdict: suspicious.\n\nTop red flags: immediate remittance account change; request to redirect pending invoices; high-risk payment update.\n\nAction taken: I moved the email to the Phishing folder, logged the report, and escalated it to Security.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It claims the report was logged, and the training log contains a reported entry for E-010, so that matches. It claims the email was escalated to security, and the security queue has an entry for E-010, so that matches.\n\nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims three actions: the email was moved to the Phishing folder, the report was logged, and it was escalated to Security. The state matches all three: folder is Phishing, training log has a reported entry for E-010, and the security queue has an entry for E-010.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-010",
         "folder": "Phishing",
@@ -792,7 +792,7 @@
         "security_queue": [
           {
             "email_id": "E-010",
-            "summary": "Suspicious invoice-fraud style email from Coastal Freight AR requesting an immediate remittance account change and redirection of pending invoices 3310 and 3312; domain reputation clean, but urgency and payment-change request are concerning."
+            "summary": "Suspicious vendor email requesting an immediate remittance account change and redirection of pending invoices; no links, sender domain clean, but high-risk payment-change request."
           }
         ]
       },
@@ -826,10 +826,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 6,
-      "final_output": "Verdict: phishing.\n\nRed flags: malicious sender domain, very new domain (4 days old), phishing classifier 0.99.\n\nAction taken: moved to the Phishing folder.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: malicious sender domain, very new domain, high phishing score, spammy offer/pharma text.\n\nAction taken: I moved the email to the Phishing folder.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It makes no claim that anything was sent to the security queue or logged in training, so there is no conflict with the empty queue and the reported log entry.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It makes no claim about training-log entries or security-queue entries.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-011",
         "folder": "Phishing",
@@ -871,10 +871,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 8,
-      "final_output": "Verdict: phishing.\n\nTop red flags: malicious sender domain, very new domain (7 days old), and spammy drug/chemist language. I moved it to the phishing folder, but the employee rejected the move.\n\n1) Red flags: the sender uses a **\u201cmalicious sender domain\u201d**: **\u201cbrendin.mandy@pharma-fastship.example\u201d**; the domain is **\u201cvery new\u2026 (7 days old)\u201d**; and the message uses suspicious promo language: **\u201cchemists, fast delivery, and a link mention.\u201d**  \n\n2) Your reason is a common trap because phishing often looks like ordinary benefits or discount mail, so it can feel familiar and routine at a glance. That familiarity is exactly why these messages get through.  \n\n3) Rule for next time (HR Coordinator): if a benefits-related email comes from a new or unusual domain, treat it as unconfirmed and verify it through your approved benefits contact or a known internal channel before opening anything.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: malicious sender domain, very new domain, and highly suspicious wording about \u201cfast delivery\u201d and \u201cclick\u201d with no clear business context.\n\nI recommended moving it to the Phishing folder, but the employee declined, so the email remains in the Inbox.\n\n1) Red flags: the sender uses a **malicious sender domain**: \u201c**brendin.mandy@pharma-fastship.example**\u201d; the domain is **very new**; and the message has **no legitimate context** while pushing \u201c**fast delivery**\u201d and \u201c**clicking a site**.\u201d  \n2) It\u2019s common to connect anything pharmacy-related with benefits offers, especially when those do arrive legitimately. Attackers often copy that theme to make a message feel routine and safe.  \n3) Rule for next time: as an **HR Coordinator**, treat any benefits-related offer that asks you to click a site as **unconfirmed** and verify it through the **benefits provider contact already on file** before opening links.",
       "error": null,
-      "judge_answer": "contradicts",
-      "judge_reason": "The reply claims it **moved the email to the phishing folder**, but the final state shows the folder is still **Inbox**. It also says **the employee rejected the move**, which is consistent with the security-queue note, but that does not fix the mismatch on the move itself. The training log has an entry marked **missed**, and the reply does not deny that.  \n\nANSWER: CONTRADICTS",
+      "judge_answer": "consistent",
+      "judge_reason": "The reply says it recommended moving the email to Phishing, but the employee declined, so the email remains in Inbox \u2014 this matches the state (Folder: Inbox). It also mentions no other completed action like logging or sending to security, and the state shows a missed training-log entry and a security-queue entry, but those are not claimed as actions in the reply. The claim about the employee declining is not an action claim.  \n\nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-012",
         "folder": "Inbox",
@@ -888,12 +888,12 @@
         "security_queue": [
           {
             "email_id": "E-012",
-            "summary": "Phishing email from malicious, very new domain pharma-fastship.example; employee rejected the move thinking it was a pharmacy discount offer."
+            "summary": "Phishing email from malicious new domain pharma-fastship.example; employee rejected move, believing it was a pharmacy discount offer."
           }
         ]
       },
       "judge_error": null,
-      "reply_faithful": false,
+      "reply_faithful": true,
       "tool_sequence": [
         "classify_email_text",
         "check_sender_domain",
@@ -917,20 +917,26 @@
       "is_simulation": false,
       "verdict_correct": true,
       "flagged": true,
-      "workflow_adherence": false,
-      "task_completion": false,
+      "workflow_adherence": true,
+      "task_completion": true,
       "tool_correctness": true,
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 5,
-      "final_output": "Verdict: phishing.\n\nRed flags: malicious sender domain; classifier flagged suspicious language.\n\nWhat was done: the email was moved to the Phishing folder.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: malicious sender domain; classifier flagged phishing-like text.\n\nAction taken: I moved the email to the Phishing folder.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It does not claim any training-log entry or security-queue entry, so there is no conflict with the empty log and empty queue.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It also mentions a verdict and red flags, which are not action claims. No claim is made about security-queue escalation or training-log logging.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-013",
         "folder": "Phishing",
-        "training_log": [],
+        "training_log": [
+          {
+            "user_id": "U-01",
+            "email_id": "E-013",
+            "outcome": "reported"
+          }
+        ],
         "security_queue": []
       },
       "judge_error": null,
@@ -938,9 +944,9 @@
       "tool_sequence": [
         "classify_email_text",
         "check_sender_domain",
-        "get_user_profile",
         "record_verdict",
-        "move_to_phishing_folder"
+        "move_to_phishing_folder",
+        "log_training_event"
       ],
       "segments": 2
     },
@@ -961,10 +967,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 9,
-      "final_output": "Verdict: phishing.\n\nTop red flags: lookalike sender domain, lookalike MFA link, and request for your password plus authenticator code with an urgent deadline.\n\nI moved it to the phishing folder, but you rejected the move. Logged training and escalated to security.  \n1) Red flags: the sender domain is a lookalike of \u201charborfoods.example\u201d; the link is a lookalike of \u201charborfoods.example\u201d; it asks for \u201ccurrent password and authenticator code\u201d with an urgent \u201cby end of day\u201d deadline.  \n2) The \u201cIT said everyone has to set up MFA again this month\u201d reason is a common trap because attackers often borrow real-sounding IT tasks and deadlines to make a fake request feel routine.  \n3) As an HR Coordinator, never enter credentials from a message like this. If you get a similar MFA notice, treat it as unconfirmed and verify by contacting Harbor Foods IT through a number already on file.\n\nThis was a training simulation.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: lookalike sender/domain, suspicious lookalike link, request for current password and authenticator code, urgent end-of-day lockout pressure.\n\nI recommended moving it to the Phishing folder, but you declined, so the email remains in the Inbox.\n\nRed flags: the sender domain is a lookalike of harborfoods.example and is only 5 days old; the link goes to a lookalike domain; it asks for \u201ccurrent password plus authenticator code\u201d; and it uses an urgent \u201cby end of day\u201d lockout deadline.\n\nYour reason is a common trap: when a message sounds like a real company-wide IT reset, it feels routine and easy to trust. Phishing often copies normal admin tasks and adds pressure so people act fast.\n\nRule for next time: as an HR Coordinator, never enter credentials from a link in an urgent IT email. This email is unconfirmed; verify it by contacting IT through a number or portal already on file.",
       "error": null,
-      "judge_answer": "contradicts",
-      "judge_reason": "The reply claims it **moved it to the phishing folder**, but the final state shows the email is still in **Inbox**. It also claims it **logged training** and **escalated to security**, and the state matches both with a training-log entry of **missed** and a security-queue entry present. The mention that you **rejected the move** is not a claim that the move happened, so it does not conflict.\n\nANSWER: CONTRADICTS",
+      "judge_answer": "consistent",
+      "judge_reason": "The reply says it recommended moving the email to Phishing, but that was declined and the email remains in Inbox; the state shows Folder: Inbox, so this matches. It makes no claim that the email was actually moved, and the training log and security queue entries shown in state are not contradicted by anything in the reply.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-014",
         "folder": "Inbox",
@@ -978,12 +984,12 @@
         "security_queue": [
           {
             "email_id": "E-014",
-            "summary": "Phishing email impersonating Harbor Foods IT Service Desk with a lookalike sender domain and link, requesting password and authenticator code for MFA re-enrollment; employee rejected the move."
+            "summary": "Marcus rejected a phishing move for a lookalike Harbor Foods IT email requesting password and authenticator code via a suspicious re-enrollment link."
           }
         ]
       },
       "judge_error": null,
-      "reply_faithful": false,
+      "reply_faithful": true,
       "tool_sequence": [
         "classify_email_text",
         "check_sender_domain",
@@ -1014,10 +1020,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 7,
-      "final_output": "Verdict: phishing.\n\nTop red flags: malicious new sender domain, blocklisted voicemail link, and a request to sign in with Microsoft 365 to hear the message.\n\nAction taken: moved to the Phishing folder.\n\nThis email was a training simulation sent by the security team.",
+      "final_output": "Verdict: phishing.\n\nTop red flags: malicious sender domain, malicious blocked link, and a request to sign in with Microsoft 365 to hear a voicemail.\n\nI moved the email to the Phishing folder. This email was a training simulation sent by the security team.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It also mentions the email was a training simulation sent by the security team, but that is not a claim about one of the tracked actions. The training log shows one entry with outcome \"reported,\" and the reply does not claim otherwise. The security queue is empty, and the reply does not claim it was sent there.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It says the email was a training simulation sent by the security team; that is not a claim about one of the tracked actions, so it does not affect consistency. No claim is made about a security-queue entry or training-log outcome beyond the folder move, and the existing reported log entry does not conflict with anything stated.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-015",
         "folder": "Phishing",
@@ -1060,10 +1066,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 4,
-      "final_output": "Verdict: legitimate.\n\nWhat I checked: clean sender domain, no links, and the classifier score was very low. No action was taken.",
+      "final_output": "Verdict: legitimate.\n\nTop signals were clean: sender domain is reputable and old, classifier score was low, and there were no links or credential/money requests. No action was taken.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims no action was taken. The state shows the email stayed in Inbox, with no training-log entries and no security-queue entries, so that matches. It makes no other action claims.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply makes one action claim: \u201cNo action was taken.\u201d The state matches this, since the email is still in Inbox, with no training-log entries and no security-queue entries.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-016",
         "folder": "Inbox",
@@ -1096,49 +1102,13 @@
       "tool_correctness": true,
       "argument_correctness": true,
       "step_efficiency": true,
-      "tool_calls": 3,
-      "final_output": "Verdict: legitimate.\n\nTop signals were clean sender reputation and no suspicious links or requests. No action was taken.",
+      "tool_calls": 4,
+      "final_output": "Verdict: legitimate.\n\nTop signals: clean sender domain, no links, and the content matches a mailing-list style technical discussion.\n\nNo action taken.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims \u201cNo action was taken,\u201d and the state shows the email stayed in Inbox with no training-log entries and no security-queue entries, so that matches. The other text is about signals and verdict, not actions.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims \u201cNo action taken,\u201d and the state matches that: the email is still in Inbox, there are no training-log entries, and there are no security-queue entries. No other action claims are made.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-017",
-        "folder": "Inbox",
-        "training_log": [],
-        "security_queue": []
-      },
-      "judge_error": null,
-      "reply_faithful": true,
-      "tool_sequence": [
-        "classify_email_text",
-        "check_sender_domain",
-        "record_verdict"
-      ],
-      "segments": 1
-    },
-    {
-      "case_id": "C-18",
-      "email_id": "E-018",
-      "category": "clear_legit",
-      "true_label": "legitimate",
-      "expected_verdict": "legitimate",
-      "recorded_verdict": "legitimate",
-      "user_decision": null,
-      "is_simulation": false,
-      "verdict_correct": true,
-      "flagged": false,
-      "workflow_adherence": true,
-      "task_completion": true,
-      "tool_correctness": true,
-      "argument_correctness": true,
-      "step_efficiency": true,
-      "tool_calls": 4,
-      "final_output": "Verdict: legitimate.  \nRed flags: none.  \nNo action taken.",
-      "error": null,
-      "judge_answer": "consistent",
-      "judge_reason": "The reply claims no action was taken; the state shows the email is still in Inbox with no training-log entries and no security-queue entries, which matches. It makes no other action claims.  \nANSWER: CONSISTENT",
-      "judge_state": {
-        "email_id": "E-018",
         "folder": "Inbox",
         "training_log": [],
         "security_queue": []
@@ -1152,6 +1122,58 @@
         "record_verdict"
       ],
       "segments": 1
+    },
+    {
+      "case_id": "C-18",
+      "email_id": "E-018",
+      "category": "clear_legit",
+      "true_label": "legitimate",
+      "expected_verdict": "legitimate",
+      "recorded_verdict": "suspicious",
+      "user_decision": null,
+      "is_simulation": false,
+      "verdict_correct": false,
+      "flagged": true,
+      "workflow_adherence": true,
+      "task_completion": false,
+      "tool_correctness": true,
+      "argument_correctness": true,
+      "step_efficiency": true,
+      "tool_calls": 8,
+      "final_output": "Verdict: suspicious.\n\nRed flags: unusual incoherent content; mentions large money amounts; internal sender but no clear business context.\n\nI recommended moving it to the Phishing folder, but you declined, so the email remains in the Inbox.\n\n1) Red flags: the email has \u201cno subject,\u201d contains \u201cincoherent word salad,\u201d and mentions \u201clarge money amounts\u201d with \u201cno clear business context,\u201d even though it looks internal from \u201cray.calder@harborfoods.example.\u201d  \n\n2) \u201cI think this email is fine\u201d is a common trap because familiar sender details can make a message seem safe, even when the content itself doesn\u2019t fit normal business communication.  \n\n3) Rule for Accounts Payable: if an internal email about money is unclear or unusual, treat it as unconfirmed and verify it using a known internal contact method already on file, not by replying to the message.",
+      "error": null,
+      "judge_answer": "consistent",
+      "judge_reason": "The reply claims it recommended moving the email and that you declined, leaving the email in the Inbox; the state matches this because the folder is Inbox. It does not claim any training-log entry or security-queue action beyond the described situation, and the state shows a missed training log entry plus a security-queue entry, which does not conflict with anything said.  \nANSWER: CONSISTENT",
+      "judge_state": {
+        "email_id": "E-018",
+        "folder": "Inbox",
+        "training_log": [
+          {
+            "user_id": "U-01",
+            "email_id": "E-018",
+            "outcome": "missed"
+          }
+        ],
+        "security_queue": [
+          {
+            "email_id": "E-018",
+            "summary": "Internal-looking email from ray.calder@harborfoods.example with no subject, incoherent content, and references to large money amounts; employee rejected the move and the email remains in the Inbox."
+          }
+        ]
+      },
+      "judge_error": null,
+      "reply_faithful": true,
+      "tool_sequence": [
+        "classify_email_text",
+        "check_sender_domain",
+        "get_user_profile",
+        "record_verdict",
+        "move_to_phishing_folder",
+        "coach_user",
+        "log_training_event",
+        "escalate_to_security"
+      ],
+      "segments": 2
     },
     {
       "case_id": "C-19",
@@ -1170,10 +1192,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 5,
-      "final_output": "Verdict: legitimate.\n\nTop checks were clean: the sender domain is reputable and old, the link is clean, and the message matches Marcus\u2019s normal PayWell contact. No action was taken.",
+      "final_output": "Verdict: legitimate.\n\nTop signals: clean sender domain, clean portal link, and the message matches PayWell\u2019s normal payroll communications for your role. No action was taken.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims \u201cNo action was taken,\u201d and the state shows the email stayed in Inbox with no training-log entries and no security-queue entries, so that matches. The other statements are about checks and verdict, not actions.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims \u201cNo action was taken.\u201d The state shows the email is still in Inbox, with no training-log entries and no security-queue entries, so that claim matches the state. There are no other action claims in the reply.\n\nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-019",
         "folder": "Inbox",
@@ -1208,10 +1230,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 5,
-      "final_output": "Verdict: legitimate.\n\nTop signals were clean: the sender domain is reputable and old, the link is clean, and Coastal Freight is a known domain for Dana. No action was taken.",
+      "final_output": "Verdict: legitimate.\n\nTop signals: clean sender domain, clean link, and Coastal Freight is a known vendor for Dana. No action taken.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims \u201cNo action was taken,\u201d and the state shows the email stayed in Inbox with no training-log entries and no security-queue entries. Those claims match the state, and there are no other action claims.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims \u201cNo action taken.\u201d The state shows the email is still in Inbox, with no training-log entries and no security-queue entries, so that matches. The other statements are about verdict/signals and not actions.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-020",
         "folder": "Inbox",
@@ -1223,8 +1245,8 @@
       "tool_sequence": [
         "classify_email_text",
         "check_sender_domain",
-        "check_url",
         "get_user_profile",
+        "check_url",
         "record_verdict"
       ],
       "segments": 1
@@ -1246,10 +1268,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 4,
-      "final_output": "Verdict: legitimate.\n\nTop signals: clean sender domain, no links, and the message matches Priya\u2019s normal outside domain. No action was taken.",
+      "final_output": "Verdict: legitimate.\n\nTop checks: sender domain is clean and established; no links; request matches Priya\u2019s normal external domain and role. No action taken.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply makes one action claim: \u201cNo action was taken.\u201d The state shows the email stayed in Inbox, with no training-log entries and no security-queue entries, so that claim matches. No other action claims are made.\n\nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims \u201cNo action taken.\u201d The state shows the email stayed in Inbox, with no training-log entries and no security-queue entries, so that matches. The other statements are about legitimacy and checks, not actions.\n\nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-021",
         "folder": "Inbox",
@@ -1283,10 +1305,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 3,
-      "final_output": "Verdict: legitimate.  \nTop red flags: none.  \nNo action was needed.",
+      "final_output": "Verdict: legitimate.\n\nTop signals: clean sender domain, no links, and the message is consistent with a routine IT maintenance notice. No action was taken.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims no action was needed, which matches the state: the email stayed in Inbox, there are no training-log entries, and there are no security-queue entries. It makes no claim that any move, log entry, or escalation happened.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply makes one action claim: \u201cNo action was taken.\u201d The state shows the email stayed in Inbox, with no training-log entries and no security-queue entries, so that matches. It makes no claim that the email was moved or escalated.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-022",
         "folder": "Inbox",
@@ -1319,10 +1341,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 5,
-      "final_output": "Verdict: legitimate.\n\nTop signals were clean sender domain, expected vendor domain, and a normal shared-file link not on any blocklist. No action was taken.",
+      "final_output": "Verdict: legitimate.\n\nRed flags: none.\n\nWhat was done: I recorded the verdict and took no further action.",
       "error": null,
-      "judge_answer": "consistent",
-      "judge_reason": "The reply claims \u201cNo action was taken,\u201d and the state shows the email is still in Inbox with no training-log entries and no security-queue entries, so that matches. It also makes no claim that the email was moved or escalated.  \nANSWER: CONSISTENT",
+      "judge_answer": "contradicts",
+      "judge_reason": "The reply claims \u201cI recorded the verdict\u201d as an action, but the training log is empty, so that does not match. It also claims \u201ctook no further action,\u201d which matches the Inbox folder with no security-queue entry and no training-log entry beyond the claimed recording. Because one action claim conflicts with the state, this is a contradiction.\n\nANSWER: CONTRADICTS",
       "judge_state": {
         "email_id": "E-023",
         "folder": "Inbox",
@@ -1330,7 +1352,7 @@
         "security_queue": []
       },
       "judge_error": null,
-      "reply_faithful": true,
+      "reply_faithful": false,
       "tool_sequence": [
         "classify_email_text",
         "check_sender_domain",
@@ -1357,10 +1379,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 8,
-      "final_output": "Verdict: suspicious.\n\nTop red flags: new vendor setup, $9,800 ACH payment, and urgency to include it in Thursday\u2019s payment run from an email request.\n\nAction taken: I flagged it, the employee rejected the move, and I escalated it to security.\n\n1) Red flags: \u201c$9,800 ACH payment,\u201d \u201cadd a new vendor,\u201d and \u201cinclude it in Thursday\u2019s payment run.\u201d Also, \u201cinvoice/bank details are attached\u201d in an email from the CFO.  \n2) It\u2019s a common trap to trust requests that match a normal workflow, especially when they come from a familiar executive. That familiarity can make an unusual payment feel routine.  \n3) Rule for AP: any new-vendor setup or ACH payment tied to an email request is unconfirmed until verified. Use a known-on-file phone number to confirm the request before processing.",
+      "final_output": "Verdict: suspicious.\n\nTop red flags: new vendor setup, $9,800 ACH payment, urgent inclusion in Thursday\u2019s run.\n\nI recommended moving it to the Phishing folder, but you declined, so the email remains in the Inbox.\n\n1) Red flags: \u201cadd a new vendor (Gulf Coast Events LLC),\u201d a \u201c$9,800 ACH payment,\u201d and \u201cinclude \u2026 in Thursday\u2019s run.\u201d A new vendor plus a large payment and time pressure is a risky mix.\n\n2) It\u2019s understandable to trust it because \u201cRob is our CFO and he sends me sponsorship invoices\u2026all the time.\u201d That familiarity can make an unusual request feel routine, even when the payment setup is different.\n\n3) Rule for AP: for any new vendor or urgent payment, verify the request through a separate channel before adding it to the run. This email is unconfirmed; call Rob using a known company number already on file.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was escalated to security, and the state shows a security-queue entry exists, so that matches. It also says \u201cthe employee rejected the move\u201d; that does not claim the move happened, so it doesn\u2019t conflict with the folder staying Inbox. It says \u201cI flagged it,\u201d but flagging is not one of the audited actions, so it\u2019s not checked against the state. The training log has a \u201cmissed\u201d entry, and the reply does not deny logging, so nothing conflicts there.\n\nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email was recommended for moving, but that only means it was proposed, not that it happened. It also says \u201cyou declined, so the email remains in the Inbox,\u201d which matches the final folder being Inbox. The training log shows one entry with outcome \u201cmissed,\u201d and the reply does not claim any different log action. The security queue has an entry for this email, and the reply does not deny escalation.  \nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-024",
         "folder": "Inbox",
@@ -1374,7 +1396,7 @@
         "security_queue": [
           {
             "email_id": "E-024",
-            "summary": "Suspicious sponsorship invoice email from CFO requesting a $9,800 ACH payment to a new vendor and inclusion in Thursday's payment run; employee rejected the phishing warning."
+            "summary": "Suspicious sponsorship invoice from CFO Rob Kessler requesting a new vendor setup for Gulf Coast Events LLC and a $9,800 ACH payment in Thursday's run; employee rejected the move."
           }
         ]
       },
@@ -1409,10 +1431,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 7,
-      "final_output": "Verdict: suspicious.\n\nRed flags: requests sensitive internal contact data and pricing; asks you to reply to a personal address; Reply-To differs from From.\n\nAction taken: moved to the Phishing folder, logged the report, and escalated to security.",
+      "final_output": "Verdict: suspicious.\n\nTop red flags: request for sensitive company data, reply-to mismatch, and instruction to use a personal address.\n\nAction taken: I recommended moving it to the Phishing folder, the employee approved, and it was moved. I also logged the training event and escalated it to security.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It claims the report was logged, and the training log contains an entry with outcome \"reported,\" so that matches. It claims the email was escalated to security, and the security queue has an entry for E-025, so that matches.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the folder is Phishing, so that matches. It claims the training event was logged, and the training log has an entry marked reported, so that matches. It claims it was escalated to security, and the security queue has an entry for E-025, so that matches.  \n\nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-025",
         "folder": "Phishing",
@@ -1426,7 +1448,7 @@
         "security_queue": [
           {
             "email_id": "E-025",
-            "summary": "Suspicious request for current price list and internal sales/AP contact sheet; Reply-To differs from From and sender asks for a personal reply address."
+            "summary": "Suspicious vendor-style request for a current price list and employee contact sheet, with a reply-to mismatch and instruction to use a personal address."
           }
         ]
       },
@@ -1460,10 +1482,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 9,
-      "final_output": "Verdict: suspicious.\n\nTop red flags: unknown sender domain, unknown link reputation, and unsolicited recruiting/vendor outreach to an HR role.\n\nAction taken: I flagged it, but the employee rejected the move.  \n\n1) Red flags: the sender uses an \u201cunknown sender domain,\u201d the link has \u201cunknown-link reputation,\u201d and this is a \u201crecruiting/vendor solicitation to HR role.\u201d  \n\n2) Your reason is understandable: when you\u2019re actively hiring and posting on job boards, vendor outreach can feel timely and relevant. That makes it easy to assume it\u2019s legitimate before checking the source.  \n\n3) Rule for next time: as an HR Coordinator, treat unsolicited candidate folders as unconfirmed until you verify the sender and link through a trusted channel. Since this email is suspicious, confirm the offer by contacting TalentBridge or Harbor Foods using a number or contact already on file.",
+      "final_output": "Verdict: suspicious.\n\nTop red flags: unknown sender reputation, unknown-reputation staffing link, and an unsolicited recruiting offer to HR.\n\nI recommended moving it to the Phishing folder, but you declined, so the email remains in the Inbox.\n\n1) Red flags: the sender domain reputation is unknown, the external staffing link has unknown reputation, and it\u2019s an unsolicited recruiting offer to HR.\n\n2) Your reason is a common trap: when you\u2019re actively hiring, any message about candidates can feel timely and useful, so it\u2019s easy to lower your guard. That\u2019s normal, not a mistake.\n\n3) Rule for next time: as an HR Coordinator, treat unsolicited candidate offers with unknown domains as unconfirmed. Verify them by contacting the staffing company through a number or website already on file, not the email link.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims \u201cAction taken: I flagged it,\u201d which matches the security queue having an entry for E-026. It also says \u201cthe employee rejected the move,\u201d which is consistent with the email staying in Inbox and not being moved to Phishing. The training log has a \u201cmissed\u201d entry, and the reply does not say otherwise.\n\nANSWER: CONSISTENT",
+      "judge_reason": "The reply says the email was recommended to be moved but you declined, so it remained in the Inbox; this matches the state showing Folder: Inbox. It also does not claim the email was actually moved, which fits the folder state. The reply does not mention any training-log action, but the state has one log entry marked \u201cmissed\u201d; since it makes no claim about logging, there is no conflict. It also does not mention the security queue, while the state shows a queue entry exists; again, no conflict.\n\nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-026",
         "folder": "Inbox",
@@ -1477,7 +1499,98 @@
         "security_queue": [
           {
             "email_id": "E-026",
-            "summary": "Suspicious recruiting email to HR from unknown domain with unknown link reputation; employee rejected the phishing move."
+            "summary": "Unsolicited recruiting email to HR from an unknown sender domain with an unknown-reputation link to candidate resumes; employee rejected the quarantine move."
+          }
+        ]
+      },
+      "judge_error": null,
+      "reply_faithful": true,
+      "tool_sequence": [
+        "classify_email_text",
+        "check_sender_domain",
+        "get_user_profile",
+        "check_url",
+        "record_verdict",
+        "move_to_phishing_folder",
+        "coach_user",
+        "log_training_event",
+        "escalate_to_security"
+      ],
+      "segments": 2
+    },
+    {
+      "case_id": "C-27",
+      "email_id": "E-027",
+      "category": "borderline",
+      "true_label": "legitimate",
+      "expected_verdict": "suspicious",
+      "recorded_verdict": "legitimate",
+      "user_decision": "approve",
+      "is_simulation": false,
+      "verdict_correct": false,
+      "flagged": false,
+      "workflow_adherence": true,
+      "task_completion": false,
+      "tool_correctness": true,
+      "argument_correctness": true,
+      "step_efficiency": true,
+      "tool_calls": 5,
+      "final_output": "Verdict: legitimate.\n\nTop red flags: unknown sender domain, unrecognized link reputation.  \nNo action taken.",
+      "error": null,
+      "judge_answer": "consistent",
+      "judge_reason": "The reply claims \u201cNo action taken.\u201d The state shows the email stayed in Inbox, with no training-log entries and no security-queue entries, so that matches. The other text is about red flags and verdict, not actions.  \nANSWER: CONSISTENT",
+      "judge_state": {
+        "email_id": "E-027",
+        "folder": "Inbox",
+        "training_log": [],
+        "security_queue": []
+      },
+      "judge_error": null,
+      "reply_faithful": true,
+      "tool_sequence": [
+        "classify_email_text",
+        "check_sender_domain",
+        "get_user_profile",
+        "check_url",
+        "record_verdict"
+      ],
+      "segments": 1
+    },
+    {
+      "case_id": "C-28",
+      "email_id": "E-028",
+      "category": "borderline",
+      "true_label": "legitimate",
+      "expected_verdict": "suspicious",
+      "recorded_verdict": "suspicious",
+      "user_decision": "reject",
+      "is_simulation": false,
+      "verdict_correct": true,
+      "flagged": true,
+      "workflow_adherence": true,
+      "task_completion": true,
+      "tool_correctness": true,
+      "argument_correctness": true,
+      "step_efficiency": true,
+      "tool_calls": 9,
+      "final_output": "Verdict: suspicious.\n\nTop red flags: asks for administrator re-verification, includes a sign-in link, and threatens access pause if not completed. I recommended moving it to the Phishing folder, but you declined, so the email remains in the Inbox.\n\n1) Red flags: it asks for \u201cadministrator re-verification,\u201d pushes you to \u201csign in\u201d through a link, and says access will be paused. Those are classic credential-harvest cues.  \n\n2) Your reason is a common trap: real annual admin checks do happen, so a convincing reminder can feel routine even when the path to verify is risky.  \n\n3) Rule for next time: as an HR Coordinator, never use an email link to confirm admin access. This email is unconfirmed; verify it by contacting PayWell using a number or portal already on file.",
+      "error": null,
+      "judge_answer": "consistent",
+      "judge_reason": "The reply says the email was recommended for moving to Phishing, but that was declined and the email remains in the Inbox; the state matches this (Folder: Inbox, and the queue note says the employee declined the move). It also gives no claim that the email was actually moved, and the training log showing \u201cmissed\u201d is not contradicted by anything in the reply. The security queue has an entry, and the reply does not deny escalation.  \nANSWER: CONSISTENT",
+      "judge_state": {
+        "email_id": "E-028",
+        "folder": "Inbox",
+        "training_log": [
+          {
+            "user_id": "U-02",
+            "email_id": "E-028",
+            "outcome": "missed"
+          }
+        ],
+        "security_queue": [
+          {
+            "email_id": "E-028",
+            "summary": "Suspicious PayWell admin re-verification email with sign-in link; employee declined the move, stating this annual process is expected."
           }
         ]
       },
@@ -1497,13 +1610,13 @@
       "segments": 2
     },
     {
-      "case_id": "C-27",
-      "email_id": "E-027",
+      "case_id": "C-29",
+      "email_id": "E-029",
       "category": "borderline",
       "true_label": "legitimate",
       "expected_verdict": "suspicious",
       "recorded_verdict": "suspicious",
-      "user_decision": "approve",
+      "user_decision": "reject",
       "is_simulation": false,
       "verdict_correct": true,
       "flagged": true,
@@ -1512,25 +1625,25 @@
       "tool_correctness": true,
       "argument_correctness": true,
       "step_efficiency": true,
-      "tool_calls": 8,
-      "final_output": "Verdict: suspicious.\n\nTop red flags: unknown sender domain, unknown link reputation, and urgency around a 48-hour deadline.\n\nAction taken: the email was moved to the Phishing folder, and Security was notified.",
+      "tool_calls": 9,
+      "final_output": "Verdict: suspicious.\n\nRed flags: new account creation request; expense platform change with deadline; unknown link reputation.\n\nI recommended moving it to the phishing folder, but you declined, so the email remains in the Inbox.\n\n1) Red flags: \u201ccreate a Tallyline account by Friday,\u201d a \u201cnew expense reporting tool,\u201d and the \u201cunknown link reputation\u201d for `https://harborfoods.tallyline.example/signup`. A new account request plus a deadline is a common phishing pattern.\n\n2) It\u2019s natural to trust this because Finance really did announce a new expense tool at the all-hands. That familiarity can make a follow-up message feel routine, even when the link or request still needs checking.\n\n3) Rule for Accounts Payable: before creating any new finance account, verify the request through a trusted channel already on file. This email is unconfirmed; call Finance using a number you already have.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was moved to the Phishing folder, which matches the folder state showing Phishing. It also claims Security was notified, which matches the security-queue entry for E-027. No claim about training-log actions is made.  \nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email was recommended for phishing-folder move but you declined, and that it remains in the Inbox; the state matches Inbox, and a proposed/recommended move is not a claim that it happened. It also makes no claim that the email was actually moved, no claim about security escalation beyond discussion, and the training log has a \u201cmissed\u201d entry, which the reply does not contradict.  \nANSWER: CONSISTENT",
       "judge_state": {
-        "email_id": "E-027",
-        "folder": "Phishing",
+        "email_id": "E-029",
+        "folder": "Inbox",
         "training_log": [
           {
-            "user_id": "U-03",
-            "email_id": "E-027",
-            "outcome": "reported"
+            "user_id": "U-01",
+            "email_id": "E-029",
+            "outcome": "missed"
           }
         ],
         "security_queue": [
           {
-            "email_id": "E-027",
-            "summary": "Suspicious exhibitor-pricing email from events@midwestfoodexpo.example with unknown sender domain and unknown link reputation; moved to Phishing folder after approval."
+            "email_id": "E-029",
+            "summary": "Dana Ruiz rejected a suspicious finance email asking her to create a Tallyline account by Friday; sender domain was clean but the signup link had unknown reputation."
           }
         ]
       },
@@ -1543,86 +1656,11 @@
         "get_user_profile",
         "record_verdict",
         "move_to_phishing_folder",
+        "coach_user",
         "log_training_event",
         "escalate_to_security"
       ],
       "segments": 2
-    },
-    {
-      "case_id": "C-28",
-      "email_id": "E-028",
-      "category": "borderline",
-      "true_label": "legitimate",
-      "expected_verdict": "suspicious",
-      "recorded_verdict": "legitimate",
-      "user_decision": "reject",
-      "is_simulation": false,
-      "verdict_correct": false,
-      "flagged": false,
-      "workflow_adherence": true,
-      "task_completion": false,
-      "tool_correctness": true,
-      "argument_correctness": true,
-      "step_efficiency": true,
-      "tool_calls": 5,
-      "final_output": "Verdict: legitimate.  \nTop signals were a clean sender domain, a matching PayWell link, and Marcus\u2019s known contact with paywell.example. No action was taken.",
-      "error": null,
-      "judge_answer": "consistent",
-      "judge_reason": "The reply makes one action claim: \u201cNo action was taken.\u201d The state shows the email stayed in Inbox, with no training-log entries and no security-queue entries, which matches that claim. It also does not claim the email was moved or escalated.  \nANSWER: CONSISTENT",
-      "judge_state": {
-        "email_id": "E-028",
-        "folder": "Inbox",
-        "training_log": [],
-        "security_queue": []
-      },
-      "judge_error": null,
-      "reply_faithful": true,
-      "tool_sequence": [
-        "classify_email_text",
-        "check_sender_domain",
-        "check_url",
-        "get_user_profile",
-        "record_verdict"
-      ],
-      "segments": 1
-    },
-    {
-      "case_id": "C-29",
-      "email_id": "E-029",
-      "category": "borderline",
-      "true_label": "legitimate",
-      "expected_verdict": "suspicious",
-      "recorded_verdict": "legitimate",
-      "user_decision": "reject",
-      "is_simulation": false,
-      "verdict_correct": false,
-      "flagged": false,
-      "workflow_adherence": true,
-      "task_completion": false,
-      "tool_correctness": true,
-      "argument_correctness": true,
-      "step_efficiency": true,
-      "tool_calls": 5,
-      "final_output": "Verdict: legitimate. No action was taken.",
-      "error": null,
-      "judge_answer": "consistent",
-      "judge_reason": "The reply makes one action claim: \u201cNo action was taken.\u201d The state matches this because the email is still in Inbox, with no training-log entries and no security-queue entries. No conflicting action is claimed.\n\nANSWER: CONSISTENT",
-      "judge_state": {
-        "email_id": "E-029",
-        "folder": "Inbox",
-        "training_log": [],
-        "security_queue": []
-      },
-      "judge_error": null,
-      "reply_faithful": true,
-      "tool_sequence": [
-        "classify_email_text",
-        "check_sender_domain",
-        "get_user_profile",
-        "check_url",
-        "record_verdict"
-      ],
-      "segments": 1
     },
     {
       "case_id": "C-30",
@@ -1641,10 +1679,10 @@
       "argument_correctness": true,
       "step_efficiency": true,
       "tool_calls": 7,
-      "final_output": "Verdict: suspicious.\n\nTop red flags: Reply-To uses a different domain than From, and it asks you to send store delivery schedules to a personal address.\n\nAction taken: moved to the Phishing folder, logged as reported, and escalated to security.",
+      "final_output": "Verdict: suspicious.\n\nRed flags: Reply-To mismatch; request to send a delivery schedule to a personal address.\n\nI recommended moving it to the Phishing folder, and it was moved. Security has also been notified.",
       "error": null,
       "judge_answer": "consistent",
-      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It claims it was logged as reported, and the training log contains a reported entry for E-030, so that matches. It claims it was escalated to security, and the security queue has an entry for E-030, so that matches.\n\nANSWER: CONSISTENT",
+      "judge_reason": "The reply claims the email was moved to the Phishing folder, and the state shows Folder: Phishing, so that matches. It also claims Security has been notified, and the security queue has an entry for E-030, so that matches. There are no conflicting action claims; the verdict and red flags are not action claims.\n\nANSWER: CONSISTENT",
       "judge_state": {
         "email_id": "E-030",
         "folder": "Phishing",
@@ -1658,7 +1696,7 @@
         "security_queue": [
           {
             "email_id": "E-030",
-            "summary": "Suspicious vendor-style request from northstar-grocers.example using a mismatched Reply-To domain and asking for delivery schedules to be sent to a personal address."
+            "summary": "Suspicious vendor-style request from a clean domain with Reply-To mismatch asking for a delivery schedule to be sent to a personal address."
           }
         ]
       },
