@@ -8,4 +8,7 @@ Modules:
     guard_agents  Coach and Guard agent definitions, build_input()
     runners       run_investigation, run_interactive, run_case
     trace_utils   show_trace() copied from the class tutorial
+    evaluation    trace reading, score_case, run loop, summaries, judge parsing
+    judge         the reply judge (reply faithfulness, the tenth metric)
+    lesson_judge  the lesson judge (PLAN.md's lesson-quality metric), standalone
 """
