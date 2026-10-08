@@ -38,6 +38,7 @@ probe = Agent(
 
 
 def dump(label, result):
+    """Print every new_item, pending interruption, and the final output."""
     print(f"\n--- {label}: {len(result.new_items)} new_items, "
           f"{len(result.interruptions)} interruptions ---")
     for i, item in enumerate(result.new_items):
@@ -55,6 +56,7 @@ def dump(label, result):
 
 
 async def main():
+    """Pause-resume both ways, then answer the plan's call_id question."""
     print("== Run 1: approve path ==")
     r1 = await Runner.run(probe, "Please perform the probe action.", max_turns=6)
     dump("before resume", r1)
