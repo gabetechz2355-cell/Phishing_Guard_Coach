@@ -31,6 +31,7 @@ failures = []
 
 
 def expect(label, cond, got):
+    """Print a pass/fail line and collect the failure instead of stopping."""
     status = "ok " if cond else "FAIL"
     print(f"[{status}] {label}: {got}")
     if not cond:
@@ -38,6 +39,7 @@ def expect(label, cond, got):
 
 
 async def main():
+    """Exercise each Sunday tool's happy path and its error returns."""
     reset_world()
 
     r = await call(classify_email_text, email_id="E-001")
