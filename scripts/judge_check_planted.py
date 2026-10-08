@@ -67,6 +67,7 @@ PLANTS = {
 
 
 def parse_sheet(text):
+    """The sheet's cases by ID: state dict and saved reply per section."""
     blocks = re.split(r"(?=^## C-)", text, flags=re.MULTILINE)[1:]
     cases = {}
     for block in blocks:
@@ -87,6 +88,7 @@ def parse_sheet(text):
 
 
 def plant(reply, original, planted):
+    """Replace the original sentence with the planted one, or append it."""
     if original is None:
         return reply + " " + planted
     if original not in reply:
@@ -96,6 +98,7 @@ def plant(reply, original, planted):
 
 
 async def main():
+    """Judge the three planted replies and write the results file."""
     cases = parse_sheet(INPUTS.read_text(encoding="utf-8"))
     judge = make_judge()
     caught = 0
