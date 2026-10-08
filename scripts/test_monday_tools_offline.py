@@ -21,6 +21,7 @@ from phishing_guard.world import MAILBOX, SECURITY_QUEUE, TRAINING_LOG, reset_wo
 
 
 def ctx_for(tool, **kwargs):
+    """A ToolContext plus the JSON arguments, as the runner would build them."""
     args = json.dumps(kwargs)
     return ToolContext(context=None, tool_name=tool.name,
                        tool_call_id="call_test", tool_arguments=args), args
@@ -43,6 +44,7 @@ failures = []
 
 
 def expect(label, cond, got):
+    """Print a pass/fail line and collect the failure instead of stopping."""
     status = "ok " if cond else "FAIL"
     print(f"[{status}] {label}: {got}")
     if not cond:
@@ -50,6 +52,7 @@ def expect(label, cond, got):
 
 
 async def main():
+    """Exercise the guardrail branches, then each Monday tool's paths."""
     reset_world()
 
     # Guardrail: unknown email, no verdict, legitimate verdict, then allowed.
