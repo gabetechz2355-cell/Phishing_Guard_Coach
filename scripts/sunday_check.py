@@ -29,6 +29,7 @@ DEFAULT = ["E-001", "E-002", "E-003"]
 
 
 async def main(email_ids):
+    """Run each email once, print its trace, and summarize verdict matches."""
     guard = make_guard(SUNDAY_TOOLS, SUNDAY_ADDENDUM)
     expected = {c["email_id"]: c["expected_verdict"] for c in TEST_CASES.values()}
     rows = []
