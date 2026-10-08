@@ -42,6 +42,7 @@ USERS = {
 
 
 def _load(name: str):
+    """Read one JSON file from data/."""
     return json.loads((DATA_DIR / name).read_text(encoding="utf-8"))
 
 
@@ -49,6 +50,9 @@ MAILBOX_ORIGINAL = _load("emails.json")
 THREAT_INTEL = _load("threat_intel.json")
 TEST_CASES = _load("test_cases.json")
 
+# The mutable world state the tools write to. reset_world() refills MAILBOX
+# from MAILBOX_ORIGINAL (a deep copy, so runs cannot leak into each other)
+# and empties both logs.
 MAILBOX, TRAINING_LOG, SECURITY_QUEUE = {}, [], []
 
 
@@ -60,4 +64,6 @@ def reset_world():
     SECURITY_QUEUE.clear()
 
 
+# Fill the world at import so modules that bind to MAILBOX at import time
+# (tools.py) never see it empty.
 reset_world()
