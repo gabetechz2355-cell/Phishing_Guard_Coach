@@ -29,6 +29,7 @@ passed = failed = 0
 
 
 def check(cond, label, detail=""):
+    """Print a pass/fail line and count it; the script exits on the total."""
     global passed, failed
     if cond:
         passed += 1
@@ -95,6 +96,8 @@ seen_states = {}
 
 
 async def fake_run_case(guard, case):
+    """Stand-in run_case: sets each email's world state and returns a canned
+    reply, so the stub judges have something true or false to check."""
     reset_world()
     eid = case["email_id"]
     if eid == E2:   # reject path: stays in Inbox, logged missed, escalated
@@ -109,6 +112,7 @@ async def fake_run_case(guard, case):
 
 
 async def stub_judge(case, results):
+    """A toy first-word judge that also records the state it was shown."""
     state = reply_state(case["email_id"])
     seen_states[case["case_id"]] = state
     reply = results[-1].final_output
@@ -140,6 +144,7 @@ print("\n6. a judge that raises leaves the case unjudged and the run going")
 
 
 async def broken_judge(case, results):
+    """A judge that raises on C-02, to prove one judge failure is contained."""
     if case["email_id"] == E2:
         raise RuntimeError("kaboom")
     return judge_result("no\nfine")
@@ -156,6 +161,7 @@ print("\n7. a case whose run raises is not judged")
 
 
 async def exploding_run_case(guard, case):
+    """A run_case that always raises, to produce an error row."""
     raise RuntimeError("run failed")
 
 
@@ -212,6 +218,7 @@ check(judge_result("no\nok")["reply_faithful"] is True and judge_result("yes\nba
 
 
 async def new_word_judge(case, results):
+    """The stub judge again, answering with the CONTRADICTS/CONSISTENT words."""
     state = reply_state(case["email_id"])
     claims_move = "moved" in results[-1].final_output.lower()
     return judge_result("CONTRADICTS\nclaims a move" if claims_move and state["folder"] == "Inbox"
@@ -261,6 +268,7 @@ check(r["reply_faithful"] is None and r["judge_error"].startswith("unparseable j
 
 
 async def answer_line_judge(case, results):
+    """The stub judge again, answering in the reason-first ANSWER-line format."""
     # The strict rule in miniature: "moved ... rejected" with the folder still Inbox is a contradiction;
     # "offered ... rejected" is not.
     state = reply_state(case["email_id"])
