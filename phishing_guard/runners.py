@@ -35,6 +35,8 @@ async def run_interactive(guard, email_id: str, max_turns: int = 12):
     reset_world()
     result = await Runner.run(guard, build_input(email_id), max_turns=max_turns)
     results = [result]
+    # Each pause is a needs_approval tool waiting on a decision. Decide every
+    # pending request, resume from the saved state, and keep the new segment.
     for _ in range(MAX_PAUSES):
         if not result.interruptions:
             break
@@ -63,6 +65,7 @@ async def run_case(guard, case: dict, max_turns: int = 12):
     reset_world()
     result = await Runner.run(guard, build_input(case["email_id"]), max_turns=max_turns)
     results = [result]
+    # Same pause loop as run_interactive, with the scripted decision.
     for _ in range(MAX_PAUSES):
         if not result.interruptions:
             break
