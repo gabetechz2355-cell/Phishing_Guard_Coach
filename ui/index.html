@@ -129,8 +129,8 @@ body.g .list{border-right:0;border-radius:var(--rad-lg);margin-top:0}
   cursor:pointer;font-size:13px}
 body.o .msg{border-left:3px solid transparent}
 body.o .msg.on{background:var(--sel);border-left-color:var(--accent)}
-body.g .msg{border-radius:8px;border-bottom:0;margin:2px 6px;width:auto;
-  display:block}
+body.g .msg{border-radius:8px;border-bottom:0;margin:2px 6px;
+  width:calc(100% - 12px)}
 body.g .msg.on{background:var(--sel);color:var(--sel-ink)}
 .msg .f{font-weight:700}
 .msg .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -308,6 +308,7 @@ var IC = {
 var S = null, shown = 0, runKey = "", skin = "o", drawerOpen = false;
 var rejecting = false, typed = "", selected = "E-001", unreachable = false;
 var folder = "Inbox", autoSwitched = false;
+var lastApp = "", lastDrawer = "", openTech = {};
 // The chosen client style survives a refresh; storage may be unavailable.
 try{
   var sk0 = localStorage.getItem("hm-skin");
@@ -441,6 +442,14 @@ function guardData(){
   return d;
 }
 
+// An expandable raw call/output block that remembers whether it is open
+// across re-renders (the page rebuilds its HTML on every poll).
+function tech(key, text){
+  return '<details class="tech" data-dk="'+esc(key)+'"'+
+    (openTech[key]?' open':'')+'><summary>Technical details</summary><pre>'+
+    esc(text)+'</pre></details>';
+}
+
 function verdictBadge(v){
   var cls = ["phishing","legitimate","suspicious"].indexOf(v)>=0?v:"other";
   return '<span class="verdict '+cls+'">'+esc(v)+'</span>';
@@ -473,6 +482,11 @@ function guardSections(){
   var pLabel = {investigating:"Investigating…",
     paused:"Paused — waiting for your decision",
     finishing:"Finishing up…", done:"Complete", error:"Failed"}[phz]||phz;
+  // A finished run replays its record on page load; say so while the
+  // reveal catches up, instead of "Complete" over half-drawn checks.
+  if((phz==="done")&&S&&shown<S.events.length){
+    pLabel="Replaying the recorded run…";
+  }
   h+='<div class="gcard"><div class="sect">Investigation summary</div>'+
     '<div class="kv">'+
     '<span class="k">Status</span><span>'+esc(pLabel)+'</span>'+
@@ -503,9 +517,8 @@ function guardSections(){
         esc(known?TITLES[call.name]:call.name)+
         (known?'':'<span class="chip">not a known tool</span>')+
         '</div><div class="cr">'+esc(stepDetail(call,out))+'</div>'+
-        '<details class="tech"><summary>Technical details</summary><pre>'+
-        esc(call.name+"("+JSON.stringify(call.args)+")"+
-            (out?"\n-> "+out.output:"\n(no result yet)"))+'</pre></details>'+
+        tech(call.call_id, call.name+"("+JSON.stringify(call.args)+")"+
+            (out?"\n-> "+out.output:"\n(no result yet)"))+
         '</div></div>';
     }
     h+='</div>';
@@ -561,9 +574,9 @@ function guardSections(){
       }
     }
     if(d.moveOut){
-      h+='<details class="tech"><summary>Technical details</summary><pre>'+
-        esc(d.move.name+"("+JSON.stringify(d.move.args)+")\n-> "+
-            d.moveOut.output)+'</pre></details>';
+      h+=tech("move-"+d.move.call_id,
+        d.move.name+"("+JSON.stringify(d.move.args)+")\n-> "+
+        d.moveOut.output);
     }
     h+='</div>';
   }
@@ -741,17 +754,39 @@ function render(){
       '</code></div>';
   }
   h+='</div>';
-  document.getElementById("app").innerHTML=h;
+
+  // Replace the DOM only when the HTML actually changed, and put every
+  // pane's scroll position back afterwards (innerHTML resets it to 0).
+  // The Guard feed sticks to the bottom if it was already there, so new
+  // cards stay in view while the investigation streams in.
+  var app=document.getElementById("app");
+  if(h!==lastApp){
+    lastApp=h;
+    var panes=[".side",".list .listbody",".reader",".guard .gbody"];
+    var saved=[], p, elp;
+    for(p=0;p<panes.length;p++){
+      elp=app.querySelector(panes[p]);
+      saved.push(elp?{top:elp.scrollTop,
+        stick:elp.scrollTop+elp.clientHeight>=elp.scrollHeight-40}:null);
+    }
+    app.innerHTML=h;
+    for(p=0;p<panes.length;p++){
+      elp=app.querySelector(panes[p]);
+      if(elp&&saved[p]){
+        elp.scrollTop=(panes[p]===".guard .gbody"&&saved[p].stick)
+          ?elp.scrollHeight:saved[p].top;
+      }
+    }
+  }
 
   var d=document.getElementById("drawer");
   d.className=drawerOpen?"open":"";
-  if(drawerOpen){
-    d.innerHTML='<h2>The engine <button class="btn" data-act="engine" '+
-      'style="float:right">Close</button></h2><div class="note">Every event '+
-      'the server recorded, verbatim and in order. The cards on the right '+
-      'are these same events, nothing more.</div><pre>'+
-      esc(events().map(engineLine).join("\n"))+'</pre>';
-  }
+  var dh=!drawerOpen?"":'<h2>The engine <button class="btn" '+
+    'data-act="engine" style="float:right">Close</button></h2>'+
+    '<div class="note">Every event the server recorded, verbatim and in '+
+    'order. The cards on the right are these same events, nothing more.'+
+    '</div><pre>'+esc(events().map(engineLine).join("\n"))+'</pre>';
+  if(dh!==lastDrawer){lastDrawer=dh;d.innerHTML=dh;}
 }
 
 function api(method,path,body){
@@ -766,7 +801,7 @@ function poll(){
     unreachable=false;
     S=s;
     var key=s.events.length?s.events[0].at+"|"+s.email_id:"";
-    if(key!==runKey){runKey=key;shown=0;autoSwitched=false;}
+    if(key!==runKey){runKey=key;shown=0;autoSwitched=false;openTech={};}
     if(s.phase==="error"){shown=s.events.length;}
     render();
   }).catch(function(){unreachable=true;render();});
@@ -811,6 +846,14 @@ document.addEventListener("click",function(ev){
   if(act==="send"){rejecting=false;
     api("POST","/api/decision",{decision:"reject",reason:typed}).then(poll);}
 });
+// "toggle" does not bubble; capture it to remember open details blocks.
+document.addEventListener("toggle",function(ev){
+  var t=ev.target;
+  if(t&&t.classList&&t.classList.contains("tech")){
+    var k=t.getAttribute("data-dk");
+    if(k){openTech[k]=t.open;}
+  }
+},true);
 document.addEventListener("input",function(ev){
   if(ev.target&&ev.target.id==="why"){typed=ev.target.value;}
 });
