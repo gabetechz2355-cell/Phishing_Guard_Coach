@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phishing Guard</title>
+<!--
+The page renders only what GET /api/state returns (docs/ui-plan.md, rule 4):
+Guard's and Coach's words verbatim, tool calls and results through fixed
+templates, and system state (folder, logs, queue) read directly. It never
+hides or edits Guard's reply (rule 5) and renders any tool order, unknown
+tools, and all three verdicts (rule 6). Layout per plan I.4: rail | email |
+Guard panel with two internal columns; the engine drawer overlays the left
+columns so it never adds height (rule 12).
+-->
+<style>
+:root{--bg:#F2F3F5;--panel:#FFFFFF;--ink:#1A1D21;--mute:#4A5058;--line:#C4C8CE;
+  --red:#E11D2E;--dred:#A5121F;--sil:#9AA0A8;--tint:#E9EBEE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15181C;
+  --panel:#1F2329;--ink:#F2F3F5;--mute:#B6BCC4;--line:#3A414B;--tint:#2A2F37}}
+:root[data-theme="dark"]{--bg:#15181C;--panel:#1F2329;--ink:#F2F3F5;
+  --mute:#B6BCC4;--line:#3A414B;--tint:#2A2F37}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:13.5px/1.45 Arial,Helvetica,sans-serif;display:flex;flex-direction:column}
+.banner{display:flex;align-items:center;gap:12px;background:var(--ink);
+  color:var(--bg);padding:5px 14px;font-size:12.5px}
+.banner .grow{flex:1}
+.mode{font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.04em}
+.mode.live{background:var(--red);color:#fff}
+.mode.replay{background:var(--sil);color:#1A1D21}
+.mode.fake{background:#FFC400;color:#1A1D21;border:2px solid #1A1D21;
+  font-size:13px;text-transform:uppercase}
+.mode.off{background:#555;color:#eee}
+.timer{font:12px ui-monospace,Consolas,monospace}
+.timer.over{color:#FF8189;font-weight:700}
+.sk button{font:inherit;font-size:12px;border:1px solid var(--bg);
+  background:transparent;color:var(--bg);border-radius:999px;padding:2px 10px;
+  cursor:pointer;margin-left:5px}
+.sk button.on{background:var(--bg);color:var(--ink)}
+.top{display:flex;align-items:center;gap:14px;padding:7px 14px}
+.top .logo{font-weight:700;font-size:16px}
+.top .search{flex:1;max-width:520px;padding:5px 12px;font-size:12.5px}
+.o .top{background:#0F4C81;color:#fff}
+.o .search{background:#fff;color:#4A5058;border-radius:4px}
+.g .top{background:var(--panel);border-bottom:1px solid var(--line)}
+.g .search{background:var(--tint);color:var(--mute);border-radius:999px}
+.toolrow{display:flex;gap:16px;padding:5px 14px;border-bottom:1px solid var(--line);
+  background:var(--panel);font-size:12px;color:var(--mute)}
+.g .toolrow{display:none}
+.app{flex:1;min-height:0;display:grid;grid-template-columns:190px 330px minmax(0,1fr)}
+.col{padding:9px 10px;overflow:auto;border-right:1px solid var(--line);
+  background:var(--panel)}
+.col-guard{background:var(--bg);border-right:0;display:flex;flex-direction:column}
+.compose{display:none}
+.g .compose{display:inline-block;background:#C2E7FF;color:#001D35;
+  border-radius:16px;padding:8px 18px;font-weight:700;margin-bottom:10px}
+h3.rail{font-size:11px;font-weight:700;color:var(--mute);margin:10px 0 5px}
+.folder{display:flex;justify-content:space-between;padding:5px 10px}
+.o .folder.on{background:var(--tint);border-left:4px solid #0F4C81;font-weight:700}
+.g .folder{border-radius:0 999px 999px 0}
+.g .folder.on{background:#D3E3FD;color:#001D35;font-weight:700}
+.folder .n{color:var(--mute)}
+.msg{display:block;width:100%;text-align:left;background:var(--panel);border:0;
+  border-bottom:1px solid var(--line);padding:8px 9px;cursor:pointer;
+  color:inherit;font:inherit}
+.o .msg.on{background:var(--tint);border-left:4px solid #0F4C81}
+.g .msg.on{background:#D3E3FD;color:#001D35}
+.msg .f{font-weight:700}
+.msg .s{color:var(--mute);font-size:12.5px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.msg .st{font-size:11.5px;margin-top:2px;color:var(--mute)}
+.hdr{border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:10px}
+.hdr h2{margin:0 0 5px;font-size:17px}
+.hdr div{color:var(--mute);font-size:12.5px}.hdr b{color:var(--ink)}
+pre.body{white-space:pre-wrap;font:inherit;font-size:13px;margin:0}
+.gtitle{display:flex;justify-content:space-between;align-items:center;gap:8px;
+  margin-bottom:6px;padding-bottom:6px;border-bottom:4px solid var(--red)}
+.gtitle h2{margin:0;font-size:17px;display:inline}
+.gtitle .sub{font-size:11.5px;color:var(--mute)}
+button.btn{font:inherit;font-size:12.5px;border:1px solid var(--ink);
+  background:var(--panel);color:var(--ink);border-radius:6px;padding:5px 11px;
+  cursor:pointer}
+button.pri{background:var(--ink);color:var(--bg)}
+button.rej{border-color:var(--red);color:var(--red)}
+button.btn:hover{border-color:var(--red)}
+button.btn:disabled{opacity:.45;cursor:default}
+.gbody{flex:1;min-height:0;overflow:auto}
+.gcols{columns:2;column-gap:14px}
+.gcols .step,.gcols .card{break-inside:avoid}
+/* No entrance animation: the renderer rebuilds the panel's HTML on every
+   poll/reveal tick, so an animation here replays on every element each
+   tick and reads as blinking. Identical markup repainted without
+   animation shows no visible change. */
+.step{display:flex;gap:8px;padding:3px 0;border-top:1px solid var(--line)}
+.dot{flex:none;width:16px;height:16px;border-radius:50%;background:var(--ink);
+  color:var(--bg);font-size:10px;display:flex;align-items:center;
+  justify-content:center;margin-top:2px}
+.dot.wait{background:var(--sil)}
+.step .t{font-weight:700}
+.step .d{color:var(--mute);font-size:11.5px;white-space:pre-wrap;word-break:break-word}
+.step .sd{min-width:0;font-size:12px;line-height:1.35}
+.step .sd b{font-weight:700}
+.step .sd .di{color:var(--mute);font-size:11.5px;white-space:pre-wrap;
+  word-break:break-word}
+.layer{font-size:10.5px;font-weight:700;color:var(--mute);letter-spacing:.03em}
+.chip{font-size:9.5px;font-weight:700;color:var(--mute);letter-spacing:.04em;
+  border:1px solid var(--line);border-radius:3px;padding:0 4px;
+  vertical-align:1px;margin-right:4px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:6px 9px;margin:5px 0}
+.verdict{display:inline-block;font-weight:700;padding:2px 10px;border-radius:4px;
+  color:#fff}
+.verdict.phishing{background:var(--red)}
+.verdict.legitimate{background:#4A5058}
+.verdict.suspicious{background:var(--sil);color:#1A1D21}
+.verdict.other{background:var(--ink);color:var(--bg)}
+.flags{margin:4px 0 0;color:var(--mute);font-size:12px}
+.approval{border:2px solid var(--red)}
+.row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+input.txt{width:100%;font:inherit;border:1px solid var(--line);background:var(--bg);
+  color:var(--ink);border-radius:6px;padding:6px 9px;margin-top:7px}
+.lesson,.replytext{white-space:pre-wrap;font-size:11.5px;line-height:1.32}
+.replytext{columns:2;column-gap:20px}
+.errcard{border:2px solid var(--red)}
+.errcard .m{color:var(--red);font-weight:700}
+.truth{background:var(--tint);border:1px solid var(--line);border-radius:8px;
+  padding:6px 10px;margin-top:6px;font-size:12px;flex:none}
+.truth .k{font-size:10.5px;font-weight:700;color:var(--mute);margin-bottom:3px}
+.truth code{font:11.5px ui-monospace,Menlo,Consolas,monospace;
+  white-space:pre-wrap;word-break:break-word}
+.mute{color:var(--mute)}
+#drawer{position:fixed;top:0;bottom:0;left:0;width:600px;max-width:46%;
+  background:var(--panel);border-right:3px solid var(--red);z-index:50;
+  overflow:auto;padding:12px 14px;display:none}
+#drawer.open{display:block}
+#drawer h2{margin:0 0 4px;font-size:15px}
+#drawer .note{font-size:11.5px;color:var(--mute);margin-bottom:8px}
+#drawer pre{font:11px/1.55 ui-monospace,Menlo,Consolas,monospace;
+  white-space:pre-wrap;word-break:break-word;margin:0}
+.offline{background:var(--dred);color:#fff;text-align:center;padding:4px;
+  font-size:12.5px;display:none}
+</style></head><body>
+<div class="banner">
+  <span id="modebadge" class="mode off">&hellip;</span>
+  <span id="commit"></span>
+  <span id="timer" class="timer"></span>
+  <span class="grow"></span>
+  <span class="sk">Client style:
+    <button data-skin="o" class="on">Outlook</button>
+    <button data-skin="g">Gmail</button></span>
+</div>
+<div id="offline" class="offline">Server unreachable &mdash; showing the last known state.</div>
+<div id="chrome"></div>
+<div class="app" id="app"></div>
+<div id="drawer"></div>
+<script>
+(function(){
+"use strict";
+// Set after the first timed live run (plan stage 6). null = never turns red.
+var TIME_LIMIT_S = null;
+var REVEAL_MS = 320, POLL_MS = 500;
+
+var TITLES = {classify_email_text:"Read the text",
+  check_sender_domain:"Check the sender", check_url:"Check the link",
+  get_user_profile:"Look up the employee", record_verdict:"Record the verdict",
+  move_to_phishing_folder:"Move to Phishing (needs your approval)",
+  coach_user:"Coach the employee", log_training_event:"Log the decision",
+  escalate_to_security:"Escalate to security"};
+var LAYERS = {classify_email_text:"EVIDENCE", check_sender_domain:"EVIDENCE",
+  check_url:"EVIDENCE", get_user_profile:"EVIDENCE", record_verdict:"JUDGMENT",
+  move_to_phishing_folder:"ACTION", coach_user:"COACH",
+  log_training_event:"FOLLOW UP", escalate_to_security:"FOLLOW UP"};
+// Which internal column of the Guard panel a tool's step lands in.
+var COL_B = {coach_user:1, log_training_event:1, escalate_to_security:1};
+
+var S = null, shown = 0, runKey = "", skin = "o", drawerOpen = false;
+var rejecting = false, typed = "", selected = "E-001", unreachable = false;
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function tryJSON(s){try{return JSON.parse(s);}catch(e){return null;}}
+
+// Fixed per-tool templates over the tool's own JSON result (plan rule 4).
+// Anything unparseable or unknown falls back to the raw text, verbatim.
+function stepDetail(call, out){
+  var o = out==null ? null :
+    (out.data!==undefined ? out.data : tryJSON(out.output));
+  var a = call.args || {};
+  if(out==null){return "…";}
+  if(o==null){return out.output;}
+  switch(call.name){
+    case "classify_email_text":
+      if(o.phishing_probability==null){break;}
+      return "Phishing probability "+o.phishing_probability+"."+
+        (o.top_words&&o.top_words.length?" Top words: "+o.top_words.join(", ")+".":"");
+    case "check_sender_domain":
+      return (a.domain||"?")+": "+(o.reputation||"?")+
+        (o.age_days!=null?", "+o.age_days+" days old":"")+
+        (o.lookalike_of?", imitates "+o.lookalike_of:"")+".";
+    case "check_url":
+      return (a.url||"?")+": "+(o.reputation||"?")+
+        (o.on_blocklist?", on the blocklist.":", not on the blocklist.");
+    case "get_user_profile":
+      if(!o.name&&!o.role){break;}
+      return (o.name||a.user_id)+", "+(o.role||"role unknown")+"."+
+        (o.known_domains&&o.known_domains.length?" Known vendors: "+
+          o.known_domains.join(", ")+".":"")+
+        (o.past_misses&&Object.keys(o.past_misses).length?" Past misses: "+
+          JSON.stringify(o.past_misses)+".":" No past misses.");
+  }
+  return out.output;
+}
+
+// The same loose containment rule scripts/monday_check.py uses: the share
+// of the lesson's words that appear in the reply.
+function overlap(lesson, reply){
+  var strip=function(w){return w.replace(/^[.,;:!?()"'*]+|[.,;:!?()"'*]+$/g,"")
+    .toLowerCase();};
+  var lw=lesson.split(/\s+/).map(strip).filter(Boolean);
+  var rw={}; reply.split(/\s+/).map(strip).forEach(function(w){rw[w]=1;});
+  if(!lw.length){return 0;}
+  return lw.filter(function(w){return rw[w];}).length/lw.length;
+}
+
+function phase(){return S?S.phase:"idle";}
+function events(){return S?S.events.slice(0,shown):[];}
+function running(){return ["investigating","paused","finishing"].indexOf(phase())>=0;}
+
+function elapsed(){
+  if(!S||!S.events.length){return null;}
+  var t0 = Date.parse(S.events[0].at);
+  var tEnd = (phase()==="done"||phase()==="error")
+    ? Date.parse(S.events[S.events.length-1].at) : Date.now();
+  return Math.max(0,(tEnd-t0)/1000);
+}
+
+function statusLabel(m){
+  if(S&&S.email_id===m.email_id&&S.events.length){
+    return {investigating:"Guard is checking…",
+            paused:"Waiting for your decision",
+            finishing:"Finishing up…", done:"Handled",
+            error:"Run failed"}[phase()]||"";
+  }
+  return m.folder==="Phishing"?"Moved to Phishing":"New";
+}
+
+function engineLine(e){
+  var head = "#"+e.seq+" "+e.at.replace("T"," ").replace("+00:00","Z")+"  ";
+  switch(e.type){
+    case "tool_call": return head+e.name+"("+JSON.stringify(e.args)+")";
+    case "tool_result": return head+"-> "+e.output;
+    case "approval_request":
+      return head+"APPROVAL REQUESTED "+JSON.stringify(e.args)+" (run paused)";
+    case "decision":
+      return head+"DECISION "+e.decision+(e.reason?" — "+e.reason:"");
+    case "truth":
+      return head+"TRUTH folder="+e.folder+" log="+
+        JSON.stringify(e.training_log)+" queue="+JSON.stringify(e.security_queue);
+    case "reply": return head+"REPLY "+e.text;
+    case "run_error": return head+"ERROR "+e.message;
+    default:
+      return head+e.type+(e.email_id?" "+e.email_id:"")+
+        (e.guard_commit?" commit="+e.guard_commit:"");
+  }
+}
+
+function guardCards(){
+  // Walk the shown events once; pair calls with results; split into the
+  // panel's two columns. Order inside each column is Guard's own order.
+  var ev = events(), outs = {}, i, e;
+  for(i=0;i<ev.length;i++){if(ev[i].type==="tool_result"){outs[ev[i].call_id]=ev[i];}}
+  var lastDec = -1, lastReq = -1;
+  for(i=0;i<ev.length;i++){if(ev[i].type==="decision"){lastDec=ev[i].seq;}
+    if(ev[i].type==="approval_request"){lastReq=ev[i].seq;}}
+  var moveIds={};
+  for(i=0;i<ev.length;i++){
+    if(ev[i].type==="tool_call"&&ev[i].name==="move_to_phishing_folder"){
+      moveIds[ev[i].call_id]=true;
+    }
+  }
+  var A=[], B=[], R=[], top=[];
+  for(i=0;i<ev.length;i++){
+    e=ev[i];
+    if(e.type==="tool_call"){
+      var out=outs[e.call_id]&&shownHas(outs[e.call_id].seq)?outs[e.call_id]:null;
+      if(e.name==="record_verdict"){
+        var v=(e.args&&e.args.verdict)||"?";
+        var cls=["phishing","legitimate","suspicious"].indexOf(v)>=0?v:"other";
+        var fl=(e.args&&e.args.red_flags)||[];
+        A.push('<div class="card"><div><span class="layer">JUDGMENT</span> '+
+          '<span class="verdict '+cls+'">'+esc(v)+'</span></div>'+
+          (fl.length?'<div class="flags">'+fl.map(esc).join(" &middot; ")+
+          '</div>':'')+'</div>');
+        continue;
+      }
+      if(e.name==="coach_user"&&out){
+        // The lesson is shown exactly once, in full, never edited. When the
+        // reply (below, verbatim) already carries it word for word - the
+        // frozen Guard copies it - the Coach card collapses to a step so
+        // the whole case fits one screen. If Guard ever paraphrases, the
+        // full card stays, so the lesson is never hidden (plan rules 5, 12).
+        var rep=null;
+        for(var j=0;j<ev.length;j++){if(ev[j].type==="reply"){rep=ev[j];}}
+        if(rep&&rep.text&&overlap(out.output,rep.text)>=0.8){
+          A.push('<div class="step"><div class="dot">&#10003;</div>'+
+            '<div class="sd"><span class="chip">COACH</span><b>Coach wrote '+
+            'the lesson.</b> <span class="di">Passed to Guard word for '+
+            'word; read it in Guard&rsquo;s reply below.</span></div></div>');
+        }else{
+          A.push('<div class="card"><div class="layer">COACH</div>'+
+            '<div class="lesson">'+esc(out.output)+'</div></div>');
+        }
+        continue;
+      }
+      var layer=LAYERS[e.name]||"TOOL";
+      var title=TITLES[e.name]||e.name;
+      var detail=e.name==="coach_user"?"Writing the lesson…":stepDetail(e,out);
+      var html='<div class="step"><div class="dot'+(out?'':' wait')+'">'+
+        (out?'&#10003;':'&#8943;')+'</div><div class="sd"><span class="chip">'+
+        esc(layer)+(TITLES[e.name]?'':' · not a known tool')+'</span>'+
+        '<b>'+esc(title)+'.</b> <span class="di">'+esc(detail)+
+        '</span></div></div>';
+      A.push(html);
+    }
+    else if(e.type==="approval_request"){
+      var pend = phase()==="paused" && e.seq===lastReq && lastDec<e.seq;
+      var reason=(e.args&&e.args.reason)||"";
+      if(pend){
+        var inner;
+        if(rejecting){
+          inner='<div style="margin-top:7px">Why do you trust this email?</div>'+
+            '<input class="txt" id="why" value="'+esc(typed)+'" '+
+            'placeholder="Type your reason">'+
+            '<div class="row"><button class="btn pri" data-act="send">Send</button>'+
+            '<button class="btn" data-act="back">Back</button></div>';
+        }else{
+          inner='<div class="row"><button class="btn pri" data-act="approve">'+
+            'Approve</button><button class="btn rej" data-act="reject">Reject'+
+            '</button></div>';
+        }
+        A.push('<div class="card approval"><div class="layer">ACTION NEEDS '+
+          'YOUR APPROVAL</div><div style="margin:4px 0"><b>Guard wants to '+
+          'move this email to Phishing.</b></div><div class="mute">'+
+          esc(reason)+'</div>'+inner+'</div>');
+      }else if(!moveIds[e.call_id]){
+        // Only for a request whose tool call never rendered (odd runs).
+        A.push('<div class="step"><div class="dot">?</div><div class="sd">'+
+          '<span class="chip">ACTION</span><b>Guard asked for approval.</b> '+
+          '<span class="di">'+esc(reason)+'</span></div></div>');
+      }
+    }
+    else if(e.type==="decision"){
+      // Column B reads as "what followed the human's decision".
+      A.push('<div class="step"><div class="dot">&#9995;</div>'+
+        '<div class="sd"><span class="chip">YOUR DECISION</span><b>'+
+        (e.decision==="approve"?"Approved the move.":"Rejected the move.")+
+        '</b>'+(e.reason?' <span class="di">&ldquo;'+esc(e.reason)+
+        '&rdquo;</span>':'')+'</div></div>');
+    }
+    else if(e.type==="reply"){
+      // Full width below the two columns: wraps wide and shallow, so the
+      // tallest case still fits one screen (plan rule 12).
+      R.push('<div class="card"><div class="layer">GUARD&rsquo;S REPLY '+
+        '(verbatim)</div><div class="replytext">'+esc(e.text)+'</div></div>');
+    }
+    else if(e.type==="run_error"){
+      top.push('<div class="card errcard"><div class="layer">RUN FAILED</div>'+
+        '<div class="m">'+esc(e.message)+'</div><div class="mute" '+
+        'style="font-size:12px;margin-top:4px">Reset the case and retry once. '+
+        'If it fails again, switch to a replay (no silent fallback: your '+
+        'call).</div></div>');
+    }
+    // case_started, truth, run_done: engine panel + truth strip territory.
+  }
+  return {top:top.join(""),A:A.join(""),B:B.join(""),R:R.join("")};
+}
+function shownHas(seq){return seq<shown;}
+
+function render(){
+  if(rejecting&&document.activeElement&&document.activeElement.id==="why"){
+    return; // don't yank the input out from under the presenter's typing
+  }
+  var mode=S?S.mode:"?", commit=S?S.guard_commit:"";
+  var badge=document.getElementById("modebadge");
+  badge.textContent=unreachable?"OFFLINE":
+    (mode==="fake"?"FAKE — offline test data":mode.toUpperCase());
+  badge.className="mode "+(unreachable?"off":
+    ({live:"live",replay:"replay",fake:"fake"})[mode]||"off");
+  document.getElementById("commit").textContent=commit?"Guard commit "+commit:"";
+  document.getElementById("offline").style.display=unreachable?"block":"none";
+
+  var el=elapsed(), t=document.getElementById("timer");
+  t.textContent=el==null?"":el.toFixed(1)+" s";
+  t.className="timer"+(TIME_LIMIT_S&&el>TIME_LIMIT_S?" over":"");
+
+  var mail=(S&&S.mailbox)||[];
+  var sel=null, m, i;
+  for(i=0;i<mail.length;i++){if(mail[i].email_id===selected){sel=mail[i];}}
+  if(!sel&&mail.length){sel=mail[0];selected=sel.email_id;}
+
+  // browser chrome (skin)
+  var h='<div class="'+skin+'"><div class="top"><span class="logo">Harbor '+
+    'Mail</span><div class="search">'+(skin==="g"?"Search mail":"Search")+
+    '</div><span>'+esc(sel?sel.to.name:"")+'</span></div>'+
+    '<div class="toolrow"><span>New mail</span><span>Delete</span>'+
+    '<span>Archive</span><span>Move to</span></div></div>';
+  document.getElementById("chrome").innerHTML=h;
+
+  var inbox=0, phish=0;
+  for(i=0;i<mail.length;i++){if(mail[i].folder==="Phishing"){phish++;}else{inbox++;}}
+
+  // rail: folders + the demo messages
+  h='<div class="col"><span class="compose">Compose</span>'+
+    '<h3 class="rail">'+(skin==="o"?"Favorites":"Labels")+'</h3>'+
+    '<div class="folder on"><span>Inbox</span><span class="n">'+inbox+
+    '</span></div><div class="folder"><span>Phishing</span><span class="n">'+
+    phish+'</span></div><h3 class="rail">Messages</h3>';
+  for(i=0;i<mail.length;i++){
+    m=mail[i];
+    h+='<button class="msg'+(m.email_id===selected?' on':'')+'" data-mail="'+
+      esc(m.email_id)+'"><div class="f">'+esc(m.from_name)+'</div>'+
+      '<div class="s">'+esc(m.subject)+'</div><div class="st">'+
+      (m.case?'Case '+esc(m.case)+' &middot; ':'')+esc(statusLabel(m))+
+      '</div></button>';
+  }
+  h+='<h3 class="rail">Signed in as</h3><div>'+esc(sel?sel.to.name:"")+
+    '</div><div class="mute">'+esc(sel?sel.to.role:"")+'</div></div>';
+
+  // email pane
+  h+='<div class="col">'+(sel?'<div class="hdr"><h2>'+esc(sel.subject)+
+    '</h2><div><b>From:</b> '+esc(sel.from_name)+' &lt;'+esc(sel.from_addr)+
+    '&gt;</div><div><b>Reply-To:</b> '+esc(sel.reply_to)+'</div>'+
+    '<div><b>To:</b> '+esc(sel.to.name)+'</div></div><pre class="body">'+
+    esc(sel.body)+'</pre>':'')+'</div>';
+
+  // Guard panel
+  var cards=guardCards();
+  var runEmail=S?S.email_id:null;
+  var canStart=!running();
+  h+='<div class="col col-guard"><div class="gtitle"><div><h2>Guard</h2> '+
+    '<span class="sub">investigates, asks, teaches'+
+    (runEmail&&S.events.length?' &middot; running on '+esc(runEmail):'')+
+    '</span></div><span>';
+  h+='<button class="btn" data-act="engine">'+(drawerOpen?'Hide':'Show')+
+    ' the engine</button> ';
+  if(canStart){h+='<button class="btn pri" data-act="run">Check this email'+
+    '</button> ';}
+  if(S&&S.events.length){h+='<button class="btn" data-act="reset">Reset case'+
+    '</button>';}
+  h+='</span></div><div class="gbody">';
+  if(!S||!S.events.length){
+    h+='<p class="mute">Guard investigates before it does anything. Each '+
+      'step below is a real tool call, chosen by the agent for this email. '+
+      'Select a message and press &ldquo;Check this email&rdquo;.</p>';
+  }else if(runEmail&&runEmail!==selected){
+    h+='<p class="mute">Guard is working on '+esc(runEmail)+'. Select that '+
+      'message to follow along.</p>';
+  }
+  if(S&&S.events.length&&phase()==="investigating"&&shown>=S.events.length){
+    h+='<p class="mute">Guard is investigating&hellip;</p>';
+  }
+  h+=cards.top+'<div class="gcols">'+cards.A+cards.B+'</div>'+cards.R+
+    '</div>';
+  if(S&&S.events.length&&S.truth){
+    h+='<div class="truth"><div class="k">MAILBOX TRUTH (read from the '+
+      'system, not from Guard)</div><code>Folder: '+esc(S.truth.folder)+
+      ' | training log: '+esc(JSON.stringify(S.truth.training_log))+
+      ' | security queue: '+esc(JSON.stringify(S.truth.security_queue))+
+      '</code></div>';
+  }
+  h+='</div>';
+  document.getElementById("app").innerHTML=h;
+
+  var d=document.getElementById("drawer");
+  d.className=drawerOpen?"open":"";
+  if(drawerOpen){
+    d.innerHTML='<h2>The engine <button class="btn" data-act="engine" '+
+      'style="float:right">Close</button></h2><div class="note">Every event '+
+      'the server recorded, verbatim and in order. The cards on the right '+
+      'are these same events, nothing more.</div><pre>'+
+      esc(events().map(engineLine).join("\n"))+'</pre>';
+  }
+}
+
+function api(method,path,body){
+  return fetch(path,{method:method,
+    headers:body?{"Content-Type":"application/json"}:undefined,
+    body:body?JSON.stringify(body):undefined}).then(function(r){
+      return r.json().catch(function(){return {};});});
+}
+
+function poll(){
+  fetch("/api/state").then(function(r){return r.json();}).then(function(s){
+    unreachable=false;
+    S=s;
+    var key=s.events.length?s.events[0].at+"|"+s.email_id:"";
+    if(key!==runKey){runKey=key;shown=0;}
+    if(s.phase==="error"){shown=s.events.length;}
+    render();
+  }).catch(function(){unreachable=true;render();});
+}
+
+setInterval(poll,POLL_MS);
+setInterval(function(){
+  if(S&&shown<S.events.length){shown++;render();}
+},REVEAL_MS);
+poll();
+
+document.addEventListener("click",function(ev){
+  var sk=ev.target.closest&&ev.target.closest("[data-skin]");
+  if(sk){skin=sk.getAttribute("data-skin");
+    document.querySelectorAll(".sk button").forEach(function(b){
+      b.className=b===sk?"on":"";});
+    render();return;}
+  var mm=ev.target.closest&&ev.target.closest("[data-mail]");
+  if(mm){selected=mm.getAttribute("data-mail");render();return;}
+  var b=ev.target.closest&&ev.target.closest("[data-act]");
+  if(!b){return;}
+  var act=b.getAttribute("data-act");
+  if(act==="engine"){drawerOpen=!drawerOpen;render();}
+  if(act==="run"){rejecting=false;typed="";
+    api("POST","/api/start",{email_id:selected}).then(poll);}
+  if(act==="reset"){rejecting=false;typed="";
+    api("POST","/api/reset").then(poll);}
+  if(act==="approve"){api("POST","/api/decision",{decision:"approve"}).then(poll);}
+  if(act==="reject"){rejecting=true;render();
+    var inp=document.getElementById("why");if(inp){inp.focus();}}
+  if(act==="back"){rejecting=false;render();}
+  if(act==="send"){rejecting=false;
+    api("POST","/api/decision",{decision:"reject",reason:typed}).then(poll);}
+});
+document.addEventListener("input",function(ev){
+  if(ev.target&&ev.target.id==="why"){typed=ev.target.value;}
+});
+document.addEventListener("keydown",function(ev){
+  if(ev.key==="Enter"&&document.activeElement&&
+     document.activeElement.id==="why"){
+    rejecting=false;
+    api("POST","/api/decision",{decision:"reject",reason:typed}).then(poll);
+  }
+});
+})();
+</script></body></html>
