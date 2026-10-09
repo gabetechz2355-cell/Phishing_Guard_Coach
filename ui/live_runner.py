@@ -25,11 +25,14 @@ def make_live_runner(max_turns=12):
     guard = make_guard_full()
 
     async def runner(email_id, log, get_decision):
+        """One live case: real SDK segments driven through run_with_pauses."""
         async def start_segment():
+            """First segment: one Runner.run on the case's built input."""
             return await Runner.run(guard, build_input(email_id),
                                     max_turns=max_turns)
 
         async def resume_segment(result, decision, reason):
+            """Apply the decision to every pending request, then resume."""
             state = result.to_state()
             for request in result.interruptions:
                 if decision == "approve":
