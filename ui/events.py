@@ -27,10 +27,12 @@ MAX_PAUSES = 3
 
 
 def _now():
+    """UTC timestamp for an event: ISO 8601, second resolution."""
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def _parse_args(raw):
+    """Tool-call arguments as a dict; unparseable JSON is kept raw."""
     try:
         return json.loads(raw)
     except (TypeError, ValueError):
