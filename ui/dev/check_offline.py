@@ -38,7 +38,15 @@ def check(cond, label, detail=""):
 def serve(app):
     server = make_server(app, 0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, server.server_address[1]
+    port = server.server_address[1]
+    # Hard guard: these checks drive starts, decisions, and resets, so they
+    # must never run against a live server. The script builds its own fake
+    # in-process server today; this keeps a future edit honest too.
+    _, state = api(port, "GET", "/api/state")
+    if state.get("mode") != "fake":
+        print(f"ABORT: server reports mode {state.get('mode')!r}, not 'fake'.")
+        sys.exit(1)
+    return server, port
 
 
 def api(port, method, path, body=None):
