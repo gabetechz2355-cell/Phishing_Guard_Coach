@@ -95,6 +95,7 @@ class App:
     # ---- the three actions + reset ------------------------------------------
 
     def state(self):
+        """GET /api/state: the event snapshot plus live truth and mailbox."""
         snap = self.log.snapshot()
         snap["truth"] = (reply_state(snap["email_id"])
                          if snap["email_id"] in MAILBOX else None)
@@ -102,6 +103,7 @@ class App:
         return snap
 
     def start_case(self, body):
+        """POST /api/start: begin a run, one at a time (409 while running)."""
         email_id = body.get("email_id") or DEMO_CASES.get(
             str(body.get("case", "")).strip().upper())
         if email_id not in MAILBOX:
@@ -114,6 +116,8 @@ class App:
             self.log = log
 
             async def _go():
+                """Run one case; failures become run_error events, with the
+                traceback kept for the evidence log, never the console."""
                 self.queue = asyncio.Queue()
                 try:
                     await self.runner(email_id, log, self.queue.get)
@@ -130,6 +134,8 @@ class App:
         return 200, {"started": email_id}
 
     def decide(self, body):
+        """POST /api/decision: hand approve/reject to the paused run's queue
+        (409 unless a pause is actually waiting on it)."""
         decision = str(body.get("decision", "")).strip().lower()
         reason = body.get("reason")
         if decision not in ("approve", "reject"):
@@ -142,6 +148,8 @@ class App:
         return 200, {"decided": decision}
 
     def reset(self):
+        """POST /api/reset: cancel the run (3 s grace), reset_world(), and
+        start a fresh EventLog — the clean slate between demo cases."""
         with self._ctl:
             task = self.task
 
@@ -164,8 +172,10 @@ class App:
 
 
 def make_handler(app):
+    """A BaseHTTPRequestHandler subclass bound to one App via the closure."""
     class Handler(BaseHTTPRequestHandler):
         def _json(self, status, payload):
+            """Send payload as a JSON response; no-store keeps polls fresh."""
             data = json.dumps(payload).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -175,6 +185,7 @@ def make_handler(app):
             self.wfile.write(data)
 
         def _html(self, text):
+            """Send the page (or the placeholder) as HTML, also no-store."""
             data = text.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -184,6 +195,7 @@ def make_handler(app):
             self.wfile.write(data)
 
         def _body(self):
+            """The request body as a dict: {} when empty, None on bad JSON."""
             length = int(self.headers.get("Content-Length") or 0)
             if not length:
                 return {}
@@ -193,6 +205,7 @@ def make_handler(app):
                 return None
 
         def do_GET(self):
+            """Routes: / and /index.html (the page), /api/state."""
             if self.path.split("?")[0] in ("/", "/index.html"):
                 if INDEX_PATH.exists():
                     self._html(INDEX_PATH.read_text(encoding="utf-8"))
@@ -204,6 +217,7 @@ def make_handler(app):
                 self._json(404, {"error": f"No route: {self.path}"})
 
         def do_POST(self):
+            """Routes: /api/start, /api/decision, /api/reset."""
             body = self._body()
             if body is None:
                 self._json(400, {"error": "Body must be JSON."})
@@ -233,10 +247,16 @@ class UIServer(ThreadingHTTPServer):
 
 
 def make_server(app, port):
+    """A UIServer on 127.0.0.1 only; port 0 (the offline checks) means
+    an ephemeral port, read back from server.server_address."""
     return UIServer(("127.0.0.1", port), make_handler(app))
 
 
 def main(argv=None):
+    """Parse the flags, pick the fake or live runner, serve until Ctrl+C.
+
+    Live mode refuses to start without a key in the environment or .env
+    (rule 2: read through dotenv, never printed)."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--fake", action="store_true",
                     help="use the canned fake runner: no model, no API key")
