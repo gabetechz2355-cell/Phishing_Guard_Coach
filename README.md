@@ -6,8 +6,10 @@ An email security agent built on the OpenAI Agents SDK. Guard investigates a
 suspicious email with real tools (a trained text classifier, threat
 intelligence, the employee's profile), records a verdict, and asks the
 employee for approval before moving anything. If the employee rejects the
-move, Coach writes a short, personal lesson explaining the red flags — and
-the case is escalated to security either way. The email's fate is always
+move, Coach writes a short, personal lesson explaining the red flags. A
+rejection, or an approved 'suspicious' verdict, is also escalated to
+security; an approved 'phishing' verdict is logged as reported. The
+email's fate is always
 decided by the mailbox state, never by the agent's words.
 
 ## Architecture
@@ -49,13 +51,13 @@ verdict. A rejected move leaves the email in the Inbox; the system state
 ## Data and classifier
 
 The text classifier is trained on the Kaggle **Phishing Email Dataset** by
-Naser Abdullah Alam. Put the dataset's CSVs in `data/` — the classifier
+Naser Abdullah Alam. Put the dataset's CSVs in `data/`: the classifier
 reads the combined `data/phishing_email.csv`. Run `01_train_classifier.ipynb`
 to rebuild `phish_clf.joblib` (TF-IDF + logistic regression; training takes
 about two minutes). On the held-out 20% (16,416 rows), the phishing class
 scores precision 0.984, recall 0.987, F1 0.985, ROC-AUC 0.999.
 
-The simulated world (10 + 20 emails, threat intel, three employees) lives
+The simulated world (30 emails, threat intel, three employees) lives
 in `data/emails.json`, `data/threat_intel.json`, and `data/test_cases.json`;
 `scripts/check_world.py` validates it without any model calls.
 
@@ -63,7 +65,7 @@ in `data/emails.json`, `data/threat_intel.json`, and `data/test_cases.json`;
 
 Open `02_guard_and_coach.ipynb`. Sections 1–6 build the agents and tools;
 section 7 **Demo** has interactive cells for demo cases A (approve path),
-B (reject path with coaching), and C (legitimate) — you type approve or
+B (reject path with coaching), and C (legitimate): you type approve or
 reject at the pause. Sections 8–10 hold the evaluation harness, results,
 and findings; set `RUN_LIVE = False` to load the saved `results/latest.json`
 instead of calling the API.
@@ -72,16 +74,17 @@ instead of calling the API.
 
 A simulated email client with the agent wired in:
 
-- `ui\start-live.cmd` — live mode, each run calls the OpenAI API (needs
+- `ui\start-live.cmd`: live mode, each run calls the OpenAI API (needs
   the key in `.env`).
-- `ui\dev\start-fake.cmd` — offline demo mode with canned scenarios, no
+- `ui\dev\start-fake.cmd`: offline demo mode with canned scenarios, no
   API key needed.
 
 Then open http://127.0.0.1:8765/. The header switches between **Outlook**
 and **Gmail** client styles (same state, two looks). The Guard panel shows
-the investigation as it streams — checks, judgment, the approval pause,
-coaching, follow-up, and Guard's verbatim reply — with the raw event log
+the investigation as it streams: checks, judgment, the approval pause,
+coaching, follow-up, and Guard's verbatim reply, with the raw event log
 behind "Show the engine" and the authoritative mailbox state pinned below.
+Drag the divider between the email and the Guard panel to resize it.
 
 ## Run the evaluation
 
@@ -122,11 +125,12 @@ docs/, design/         project brief, UI plan, mockup
   afterwards. 10 clear_phish, 10 clear_legit, 10 borderline; human
   decisions 10 approve, 10 reject, 10 not asked; 4 training simulations.
   Both answer keys were blind-reviewed and locked before any scoring.
-- **10 metrics across three scopes**: from the tool trace —
-  workflow_adherence, tool_correctness, argument_correctness,
-  step_efficiency; from the end-of-run system state — verdict_correct,
-  task_completion, and the flag metrics (precision, recall, F1 against the
-  true labels); from the final reply — reply_faithful.
+- **10 metrics across three scopes**. End-to-end: verdict_correct, flag
+  precision, flag recall, flag F1, reply_faithful. Trajectory:
+  workflow_adherence, task_completion, step_efficiency. Component:
+  tool_correctness, argument_correctness. Nine are scored by code from
+  the trace and the final world state; reply_faithful is scored by the
+  LLM judge.
 - **The LLM judge**: reply_faithful is scored by a separate judge agent
   that compares Guard's final reply with the actual folder, training log,
   and security queue. The judge went through three wordings; the final
@@ -169,21 +173,23 @@ cost of flagging borderline legitimate mail.
 
 ## Tuning log
 
-One change at a time, chosen from dev-set (C-01 to C-10) failures only,
-each verified on a full 30-case run with the same judge:
+One change at a time, chosen from dev-set (C-01 to C-10) failures only.
+Fixes 1 and 2 were made during the build, checked on demo cases C-01 and
+C-02; attempt 1a and fixes 3 and 4 were each checked on a full 30-case
+run with the same judge.
 
-1. **Fix 1** — FOLLOW UP must complete before the reply (Guard had replied
+1. **Fix 1**: FOLLOW UP must complete before the reply (Guard had replied
    after an approved move without logging it).
-2. **Fix 2** — the reply must copy Coach's lesson exactly, not summarize
+2. **Fix 2**: the reply must copy Coach's lesson exactly, not summarize
    it (one run kept only 49% of the lesson's words).
-3. **Attempt 1a (reverted)** — folding escalation into the approve
+3. **Attempt 1a (reverted)**: folding escalation into the approve
    sentence fixed the targeted skip but made Guard stop right after the
    move in 5 of 10 approve cases; completion 0.77 → 0.73.
-4. **Fix 3 (kept, commit 2d2303d)** — the approve branch as an ordered
+4. **Fix 3 (kept, commit 2d2303d)**: the approve branch as an ordered
    sequence (log, then escalate if suspicious, only then reply); the
    reject branch ends with an explicit escalate. Adherence 0.83 → 0.97,
    completion 0.77 → 0.87.
-5. **Fix 4 (kept, commit fd75429)** — a rejected move leaves the email in
+5. **Fix 4 (kept, commit fd75429)**: a rejected move leaves the email in
    the Inbox and the reply must not claim it was moved. Rejected-move
    contradictions 3 → 0 on the 10 reject cases.
 
@@ -198,14 +204,18 @@ and the flag metrics unchanged within run-to-run noise.
   with no instruction change; C-29 is wrong in 2 of 3 passes. The DECIDE
   stage was not tuned.
 - **Residual escalation skip, 2 of 90 runs** (C-10, C-27 in pass3): on
-  suspicious + approve, Guard moved and logged but did not escalate —
+  suspicious + approve, Guard moved and logged but did not escalate,
   reduced from 4/30 in the baseline by fix 3, not eliminated.
 - **Verdict recorded but no move offered, 2 of 90 runs** (C-12, C-30 in
   pass3): Guard replied without ever calling the move tool, so the
   employee was never asked.
+- **Reply wording can still slip**: all 90 judged replies in the final
+  passes were faithful, but a later live UI run of Case B again said the
+  rejected email "was moved to Phishing". The UI takes the outcome from
+  the mailbox, so the screen still shows it in the Inbox.
 - **Flag precision has a ceiling below 1.0 by design**: the locked answer
   key expects 'suspicious' on borderline truly-legitimate cases, and flag
-  precision scores flags against true labels — in pass1 Guard matched the
+  precision scores flags against true labels. In pass1 Guard matched the
   key on all 30 verdicts and precision was still 0.75.
 - **Judge evidence is partial**: the 12/12 hand-label agreement includes
   cases that were in view during judge revision; the independent evidence
