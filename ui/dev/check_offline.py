@@ -6,7 +6,7 @@ E-010, and a failing runner, and checks the event stream, the dedupe rule,
 the truth strips, resets, and the error path. The style follows
 scripts/test_score_offline.py: check(cond, label), exit 1 on any failure.
 
-Run:  .venv/Scripts/python.exe ui/check_offline.py
+Run:  .venv/Scripts/python.exe ui/dev/check_offline.py
 """
 
 import http.client
@@ -16,10 +16,10 @@ import threading
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from phishing_guard.world import MAILBOX
-from ui.fake_runner import REJECTION_PREFIX, make_fake_runner
+from ui.dev.fake_runner import REJECTION_PREFIX, make_fake_runner
 from ui.server import App, make_server
 
 PASS = FAIL = 0

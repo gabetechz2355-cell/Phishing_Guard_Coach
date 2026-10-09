@@ -25,7 +25,7 @@ from types import SimpleNamespace
 
 from phishing_guard.world import MAILBOX, SECURITY_QUEUE, TRAINING_LOG
 
-from .events import run_with_pauses
+from ui.events import run_with_pauses
 
 REJECTION_PREFIX = "The employee rejected the move. Their reason: "
 

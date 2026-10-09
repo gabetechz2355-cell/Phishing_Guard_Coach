@@ -238,7 +238,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     if args.fake:
-        from ui.fake_runner import make_fake_runner
+        from ui.dev.fake_runner import make_fake_runner
         app = App(make_fake_runner(delay=args.fake_delay), mode="fake")
     else:
         from phishing_guard.config import has_openai_key
