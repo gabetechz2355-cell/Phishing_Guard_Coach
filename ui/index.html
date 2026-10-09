@@ -345,6 +345,14 @@ try{
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+// Minimal Markdown for display only (Coach card and Guard's reply):
+// **bold** and `code`, applied after escaping, so the words themselves
+// are never changed, only styled.
+function md(s){
+  return esc(s)
+    .replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>")
+    .replace(/`([^`\n]+)`/g,"<code>$1</code>");
+}
 function tryJSON(s){try{return JSON.parse(s);}catch(e){return null;}}
 function initials(name){
   var p=String(name||"").split(/\s+/);
@@ -577,7 +585,7 @@ function guardSections(){
         (d.decision.decision==="approve"?"Approved":"Rejected")+'</b></span>';
       if(d.decision.reason){
         h+='<span class="k">Employee reason</span><span>&ldquo;'+
-          esc(d.decision.reason)+'&rdquo;</span>';
+          esc(String(d.decision.reason).trim())+'&rdquo;</span>';
       }
     }
     h+='</div>';
@@ -614,7 +622,7 @@ function guardSections(){
   if(d.coach){
     h+='<div class="gcard coachcard"><div class="sect">'+IC.pen+
       ' Coach</div>'+
-      (d.coachOut?'<div class="lesson">'+esc(d.coachOut.output)+'</div>':
+      (d.coachOut?'<div class="lesson">'+md(d.coachOut.output)+'</div>':
        '<div class="mute" style="font-size:12.5px">Writing the '+
        'lesson…</div>')+'</div>';
   }
@@ -636,7 +644,7 @@ function guardSections(){
   // Guard's reply — verbatim, compact, single column (rule 5).
   if(d.reply!=null){
     h+='<div class="gcard"><div class="sect">Guard&rsquo;s reply '+
-      '(verbatim)</div><div class="replytext">'+esc(d.reply)+'</div></div>';
+      '(verbatim)</div><div class="replytext">'+md(d.reply)+'</div></div>';
   }
   return h;
 }
