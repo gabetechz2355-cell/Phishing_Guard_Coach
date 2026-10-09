@@ -157,17 +157,20 @@ SCENARIOS = {
 
 
 def _call(n, name, args, kind="tool_call_item"):
+    """One fake tool-call (or approval) item with a deterministic call_id."""
     return SimpleNamespace(type=kind, raw_item=SimpleNamespace(
         type="function_call", call_id=f"call_{n}", name=name,
         arguments=json.dumps(args)))
 
 
 def _output(n, text):
+    """One fake tool-output item; raw_item is a dict, as the SDK returns it."""
     return SimpleNamespace(type="tool_call_output_item",
                            raw_item={"call_id": f"call_{n}"}, output=text)
 
 
 def _message(text):
+    """The final assistant-message item carrying the reply text."""
     return SimpleNamespace(type="message_output_item", raw_item=None,
                            output=text)
 
@@ -180,6 +183,7 @@ def make_fake_runner(delay=0.0, fail=False):
     """
 
     async def runner(email_id, log, get_decision):
+        """One fake case: canned segments driven through run_with_pauses."""
         sc = SCENARIOS.get(email_id)
         if sc is None:
             raise ValueError(f"No fake scenario for {email_id}. "
@@ -190,6 +194,8 @@ def make_fake_runner(delay=0.0, fail=False):
         move_n = None
 
         async def start_segment():
+            """Evidence calls and the verdict, then either a finished run
+            (legitimate / early stop) or a pause on the move request."""
             if fail:
                 await asyncio.sleep(delay)
                 raise RuntimeError("fake API failure: connection refused "
@@ -226,6 +232,9 @@ def make_fake_runner(delay=0.0, fail=False):
                                    interruptions=[request])
 
         async def resume_segment(result, decision, reason):
+            """The post-decision segment: the move result on approve, or the
+            coach/log/escalate follow-up on reject — world mutated to match,
+            the way phishing_guard/tools.py would."""
             await asyncio.sleep(delay * 3)
             simulation = bool(MAILBOX[email_id].get("is_simulation"))
             log_suffix = (" This email was a training simulation sent by the "
