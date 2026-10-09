@@ -26,6 +26,7 @@ PASS = FAIL = 0
 
 
 def check(cond, label, detail=""):
+    """Print a pass/fail line and count it; the script exits on the total."""
     global PASS, FAIL
     mark = "ok " if cond else "FAIL"
     if cond:
@@ -36,6 +37,7 @@ def check(cond, label, detail=""):
 
 
 def serve(app):
+    """Start app's server on an ephemeral port; abort unless it is fake."""
     server = make_server(app, 0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     port = server.server_address[1]
@@ -50,6 +52,7 @@ def serve(app):
 
 
 def api(port, method, path, body=None):
+    """One HTTP request to the local server: (status, parsed JSON or text)."""
     conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
     payload = None if body is None else json.dumps(body)
     headers = {"Content-Type": "application/json"} if payload else {}
@@ -81,14 +84,17 @@ def wait_phase(port, phases, timeout=5.0):
 
 
 def of_type(events, etype):
+    """The events of one type, in stream order."""
     return [e for e in events if e["type"] == etype]
 
 
 def call_names(events):
+    """Tool names in call order, for the order and dedupe checks."""
     return [e["name"] for e in of_type(events, "tool_call")]
 
 
 def main():
+    """Drive every fake scenario over real HTTP; exit 1 on any failure."""
     app = App(make_fake_runner(delay=0.0), mode="fake")
     _, port = serve(app)
 
