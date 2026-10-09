@@ -1,153 +1,278 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Phishing Guard</title>
+<title>Harbor Mail — Phishing Guard</title>
 <!--
 The page renders only what GET /api/state returns (docs/ui-plan.md, rule 4):
 Guard's and Coach's words verbatim, tool calls and results through fixed
 templates, and system state (folder, logs, queue) read directly. It never
 hides or edits Guard's reply (rule 5) and renders any tool order, unknown
-tools, and all three verdicts (rule 6). Layout per plan I.4: rail | email |
-Guard panel with two internal columns; the engine drawer overlays the left
-columns so it never adds height (rule 12).
+tools, and all three verdicts (rule 6).
+
+Layout: header | sidebar | message list | reader | Guard panel. Two client
+skins (Outlook / Gmail) restyle the same DOM through tokens on <body>; the
+skin never touches application state. The Guard panel groups the same
+events into sections — summary, checks, judgment, human decision, coach,
+follow-up, verbatim reply — with the raw stream behind "Show the engine".
+Final disposition always reads from the mailbox folder, never from Guard's
+words. Desktop-only: below 1366px the grid scrolls horizontally by design.
 -->
 <style>
-:root{--bg:#F2F3F5;--panel:#FFFFFF;--ink:#1A1D21;--mute:#4A5058;--line:#C4C8CE;
-  --red:#E11D2E;--dred:#A5121F;--sil:#9AA0A8;--tint:#E9EBEE}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15181C;
-  --panel:#1F2329;--ink:#F2F3F5;--mute:#B6BCC4;--line:#3A414B;--tint:#2A2F37}}
-:root[data-theme="dark"]{--bg:#15181C;--panel:#1F2329;--ink:#F2F3F5;
-  --mute:#B6BCC4;--line:#3A414B;--tint:#2A2F37}
+/* ---- shared tokens; each skin overrides them on <body> ---- */
+:root{
+  --bg:#F5F5F5;--panel:#FFFFFF;--ink:#1B1B1F;--mute:#5F6368;--line:#E1DFDD;
+  --accent:#0F6CBD;--sel:#D6E8F8;--sel-ink:#0B3B66;
+  --head-bg:#0F4C81;--head-ink:#FFFFFF;
+  --rad:6px;--rad-lg:8px;
+  --red:#C42B1C;--red-soft:#FDE7E9;--green:#107C10;--amber:#B07C00;
+}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font:13.5px/1.45 Arial,Helvetica,sans-serif;display:flex;flex-direction:column}
-.banner{display:flex;align-items:center;gap:12px;background:var(--ink);
-  color:var(--bg);padding:5px 14px;font-size:12.5px}
+  font:14px/1.45 "Segoe UI","Segoe UI Variable",Roboto,Arial,sans-serif;
+  display:flex;flex-direction:column}
+body.g{--bg:#F6F8FC;--line:#E3E6EC;--accent:#0B57D0;--sel:#D3E3FD;
+  --sel-ink:#001D35;--head-bg:#F6F8FC;--head-ink:#1F1F1F;
+  --rad:16px;--rad-lg:16px;
+  font-family:Roboto,"Segoe UI",Arial,sans-serif}
+button{font:inherit;color:inherit}
+svg.ic{width:16px;height:16px;flex:none;vertical-align:-3px}
+
+/* ---- thin demo-truth strip (mode, commit, timer) ---- */
+.banner{display:flex;align-items:center;gap:12px;background:#1B1B1F;
+  color:#F5F5F5;padding:4px 14px;font-size:12px}
 .banner .grow{flex:1}
-.mode{font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.04em}
-.mode.live{background:var(--red);color:#fff}
-.mode.replay{background:var(--sil);color:#1A1D21}
-.mode.fake{background:#FFC400;color:#1A1D21;border:2px solid #1A1D21;
-  font-size:13px;text-transform:uppercase}
+.mode{font-weight:700;padding:1px 10px;border-radius:4px;letter-spacing:.04em}
+.mode.live{background:#C42B1C;color:#fff}
+.mode.replay{background:#9AA0A8;color:#1B1B1F}
+.mode.fake{background:#FFC400;color:#1B1B1F;border:2px solid #000;
+  font-size:12.5px;text-transform:uppercase}
 .mode.off{background:#555;color:#eee}
 .timer{font:12px ui-monospace,Consolas,monospace}
 .timer.over{color:#FF8189;font-weight:700}
-.sk button{font:inherit;font-size:12px;border:1px solid var(--bg);
-  background:transparent;color:var(--bg);border-radius:999px;padding:2px 10px;
-  cursor:pointer;margin-left:5px}
-.sk button.on{background:var(--bg);color:var(--ink)}
-.top{display:flex;align-items:center;gap:14px;padding:7px 14px}
-.top .logo{font-weight:700;font-size:16px}
-.top .search{flex:1;max-width:520px;padding:5px 12px;font-size:12.5px}
-.o .top{background:#0F4C81;color:#fff}
-.o .search{background:#fff;color:#4A5058;border-radius:4px}
-.g .top{background:var(--panel);border-bottom:1px solid var(--line)}
-.g .search{background:var(--tint);color:var(--mute);border-radius:999px}
-.toolrow{display:flex;gap:16px;padding:5px 14px;border-bottom:1px solid var(--line);
-  background:var(--panel);font-size:12px;color:var(--mute)}
-.g .toolrow{display:none}
-.app{flex:1;min-height:0;display:grid;grid-template-columns:190px 330px minmax(0,1fr)}
-.col{padding:9px 10px;overflow:auto;border-right:1px solid var(--line);
+.offline{background:#A5121F;color:#fff;text-align:center;padding:4px;
+  font-size:12.5px;display:none}
+
+/* ---- application header ---- */
+.top{display:flex;align-items:center;gap:14px;padding:0 16px;height:48px;
+  background:var(--head-bg);color:var(--head-ink);flex:none}
+.top .logo{font-weight:700;font-size:16px;display:flex;align-items:center;
+  gap:8px;white-space:nowrap}
+.top .search{flex:1;max-width:560px;display:flex;align-items:center;gap:8px;
+  padding:6px 14px;font-size:13px}
+body.o .top .search{background:#fff;color:#5F6368;border-radius:4px;
+  height:30px}
+body.g .top{height:56px}
+body.g .top .search{background:#EAF1FB;color:#444746;border-radius:999px;
+  height:40px;max-width:640px}
+.top .who{display:flex;align-items:center;gap:8px;font-size:13px;
+  white-space:nowrap}
+.top .avatar{width:28px;height:28px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;font-size:12px;font-weight:700}
+body.o .top .avatar{background:#fff;color:#0F4C81}
+body.g .top .avatar{background:#0B57D0;color:#fff}
+.sk{display:flex;gap:0;border-radius:999px;overflow:hidden}
+body.o .sk{border:1px solid rgba(255,255,255,.65)}
+body.g .sk{border:1px solid #747775}
+.sk button{font-size:12px;border:0;background:transparent;
+  color:inherit;padding:3px 12px;cursor:pointer}
+body.o .sk button.on{background:#fff;color:#0F4C81;font-weight:700}
+body.g .sk button.on{background:#C2E7FF;color:#001D35;font-weight:700}
+.toolrow{display:flex;gap:18px;align-items:center;padding:5px 16px;
+  border-bottom:1px solid var(--line);background:var(--panel);
+  font-size:12.5px;color:var(--mute);flex:none}
+.toolrow span{display:flex;align-items:center;gap:5px}
+body.g .toolrow{display:none}
+
+/* ---- the five-region grid ---- */
+.app{flex:1;min-height:0;display:grid;min-width:1366px;
+  grid-template-columns:186px 300px minmax(330px,43fr) minmax(400px,57fr)}
+.col{min-height:0;overflow:auto}
+body.g .app{gap:10px;padding:0 10px 10px}
+
+/* sidebar */
+.side{padding:10px 8px;border-right:1px solid var(--line);
   background:var(--panel)}
-.col-guard{background:var(--bg);border-right:0;display:flex;flex-direction:column}
-.compose{display:none}
-.g .compose{display:inline-block;background:#C2E7FF;color:#001D35;
-  border-radius:16px;padding:8px 18px;font-weight:700;margin-bottom:10px}
-h3.rail{font-size:11px;font-weight:700;color:var(--mute);margin:10px 0 5px}
-.folder{display:flex;justify-content:space-between;padding:5px 10px;
-  cursor:pointer}
-.o .folder.on{background:var(--tint);border-left:4px solid #0F4C81;font-weight:700}
-.g .folder{border-radius:0 999px 999px 0}
-.g .folder.on{background:#D3E3FD;color:#001D35;font-weight:700}
-.folder .n{color:var(--mute)}
-.msg{display:block;width:100%;text-align:left;background:var(--panel);border:0;
-  border-bottom:1px solid var(--line);padding:8px 9px;cursor:pointer;
-  color:inherit;font:inherit}
-.o .msg.on{background:var(--tint);border-left:4px solid #0F4C81}
-.g .msg.on{background:#D3E3FD;color:#001D35}
+body.g .side{background:transparent;border-right:0}
+.newmail{display:flex;align-items:center;gap:8px;margin:2px 4px 12px;
+  border:0;cursor:default;font-weight:600}
+body.o .newmail{background:var(--accent);color:#fff;border-radius:4px;
+  padding:7px 16px;font-size:13px}
+body.g .newmail{background:#C2E7FF;color:#001D35;border-radius:16px;
+  padding:14px 20px;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+h3.rail{font-size:11px;font-weight:700;color:var(--mute);margin:12px 8px 4px;
+  text-transform:uppercase;letter-spacing:.05em}
+.folder{display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  padding:6px 10px;cursor:pointer;border:0;background:transparent;
+  font-size:13.5px}
+.folder .n{margin-left:auto;color:var(--mute);font-size:12px}
+body.o .folder{border-left:3px solid transparent}
+body.o .folder.on{background:var(--sel);border-left-color:var(--accent);
+  font-weight:700;color:var(--sel-ink)}
+body.o .folder.on .n{color:var(--sel-ink)}
+body.g .folder{border-radius:0 999px 999px 0;padding:7px 12px}
+body.g .folder.on{background:var(--sel);color:var(--sel-ink);font-weight:700}
+body.g .folder.on .n{color:var(--sel-ink)}
+.me{margin:14px 8px 0;font-size:12.5px}
+.me b{display:block}
+
+/* message list */
+.list{border-right:1px solid var(--line);background:var(--panel);
+  display:flex;flex-direction:column}
+body.g .list{border-right:0;border-radius:var(--rad-lg);margin-top:0}
+.listhead{flex:none;padding:10px 14px;border-bottom:1px solid var(--line);
+  font-weight:700;font-size:13px}
+.listhead .n{color:var(--mute);font-weight:400}
+.listbody{flex:1;min-height:0;overflow:auto}
+.msg{display:block;width:100%;text-align:left;background:transparent;
+  border:0;border-bottom:1px solid var(--line);padding:9px 12px;
+  cursor:pointer;font-size:13px}
+body.o .msg{border-left:3px solid transparent}
+body.o .msg.on{background:var(--sel);border-left-color:var(--accent)}
+body.g .msg{border-radius:8px;border-bottom:0;margin:2px 6px;width:auto;
+  display:block}
+body.g .msg.on{background:var(--sel);color:var(--sel-ink)}
 .msg .f{font-weight:700}
-.msg .s{color:var(--mute);font-size:12.5px;white-space:nowrap;overflow:hidden;
+.msg .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg .p{color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis}
-.msg .st{font-size:11.5px;margin-top:2px;color:var(--mute)}
-.hdr{border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:10px}
-.hdr h2{margin:0 0 5px;font-size:17px}
-.hdr div{color:var(--mute);font-size:12.5px}.hdr b{color:var(--ink)}
-pre.body{white-space:pre-wrap;font:inherit;font-size:13px;margin:0}
-.gtitle{display:flex;justify-content:space-between;align-items:center;gap:8px;
-  margin-bottom:6px;padding-bottom:6px;border-bottom:4px solid var(--red)}
-.gtitle h2{margin:0;font-size:17px;display:inline}
-.gtitle .sub{font-size:11.5px;color:var(--mute)}
-button.btn{font:inherit;font-size:12.5px;border:1px solid var(--ink);
-  background:var(--panel);color:var(--ink);border-radius:6px;padding:5px 11px;
-  cursor:pointer}
-button.pri{background:var(--ink);color:var(--bg)}
+.msg .st{font-size:11.5px;margin-top:3px;color:var(--mute)}
+body.g .msg.on .p,body.g .msg.on .st{color:#41474D}
+.empty{padding:16px;color:var(--mute);font-size:12.5px}
+
+/* reader */
+.reader{background:var(--panel);border-right:1px solid var(--line);
+  padding:16px 20px}
+body.g .reader{border-right:0;border-radius:var(--rad-lg)}
+.hdr{border-bottom:1px solid var(--line);padding-bottom:12px;
+  margin-bottom:12px}
+.hdr h2{margin:0 0 10px;font-size:19px;font-weight:600}
+.hdr .meta{display:flex;gap:10px;align-items:flex-start}
+.hdr .avatar{width:36px;height:36px;border-radius:50%;flex:none;
+  background:var(--sel);color:var(--sel-ink);display:flex;
+  align-items:center;justify-content:center;font-weight:700}
+.hdr .lines{font-size:12.5px;color:var(--mute)}
+.hdr .lines b{color:var(--ink)}
+pre.body{white-space:pre-wrap;font:inherit;font-size:13.5px;margin:0}
+
+/* ---- Guard panel ---- */
+.guard{display:flex;flex-direction:column;background:var(--bg);
+  padding:0 12px}
+body.g .guard{padding:0}
+.gtop{flex:none;display:flex;align-items:center;gap:10px;padding:10px 4px
+  8px;border-bottom:2px solid var(--accent);margin-bottom:8px}
+body.g .gtop{border-bottom:0;background:var(--panel);
+  border-radius:var(--rad-lg);padding:12px 14px;margin-bottom:0}
+.gtop .shield{width:34px;height:34px;border-radius:8px;flex:none;
+  background:var(--accent);color:#fff;display:flex;align-items:center;
+  justify-content:center}
+body.g .gtop .shield{border-radius:50%}
+.gtop h2{margin:0;font-size:16px;line-height:1.2}
+.gtop .sub{font-size:11.5px;color:var(--mute)}
+.gtop .btns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;
+  justify-content:flex-end}
+button.btn{font-size:12.5px;border:1px solid var(--mute);
+  background:var(--panel);color:var(--ink);border-radius:var(--rad);
+  padding:5px 12px;cursor:pointer;max-height:32px;white-space:nowrap}
+body.g button.btn{border-radius:999px;border-color:#747775}
+button.pri{background:var(--accent);border-color:var(--accent);color:#fff}
 button.rej{border-color:var(--red);color:var(--red)}
-button.btn:hover{border-color:var(--red)}
+button.btn:hover{border-color:var(--accent)}
+button.pri:hover{border-color:var(--ink)}
 button.btn:disabled{opacity:.45;cursor:default}
-.gbody{flex:1;min-height:0;overflow:auto}
-.gcols{columns:2;column-gap:14px}
-.gcols .step,.gcols .card{break-inside:avoid}
-/* No entrance animation: the renderer rebuilds the panel's HTML on every
-   poll/reveal tick, so an animation here replays on every element each
-   tick and reads as blinking. Identical markup repainted without
-   animation shows no visible change. */
-.step{display:flex;gap:8px;padding:3px 0;border-top:1px solid var(--line)}
-.dot{flex:none;width:16px;height:16px;border-radius:50%;background:var(--ink);
-  color:var(--bg);font-size:10px;display:flex;align-items:center;
-  justify-content:center;margin-top:2px}
-.dot.wait{background:var(--sil)}
-.step .t{font-weight:700}
-.step .d{color:var(--mute);font-size:11.5px;white-space:pre-wrap;word-break:break-word}
-.step .sd{min-width:0;font-size:12px;line-height:1.35}
-.step .sd b{font-weight:700}
-.step .sd .di{color:var(--mute);font-size:11.5px;white-space:pre-wrap;
-  word-break:break-word}
-.layer{font-size:10.5px;font-weight:700;color:var(--mute);letter-spacing:.03em}
-.chip{font-size:9.5px;font-weight:700;color:var(--mute);letter-spacing:.04em;
-  border:1px solid var(--line);border-radius:3px;padding:0 4px;
-  vertical-align:1px;margin-right:4px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;
-  padding:6px 9px;margin:5px 0}
-.verdict{display:inline-block;font-weight:700;padding:2px 10px;border-radius:4px;
-  color:#fff}
+button:focus-visible,.msg:focus-visible,.folder:focus-visible{
+  outline:2px solid var(--accent);outline-offset:1px}
+.gbody{flex:1;min-height:0;overflow:auto;padding:2px 2px 8px}
+body.g .gbody{padding:8px 0}
+.gcard{background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--rad-lg);padding:10px 14px;margin:0 0 8px}
+body.g .gcard{border:0;box-shadow:0 1px 2px rgba(60,64,67,.12)}
+.sect{font-size:11px;font-weight:700;color:var(--mute);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;
+  display:flex;align-items:center;gap:6px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:3px 12px;
+  font-size:12.5px}
+.kv .k{color:var(--mute)}
+.verdict{display:inline-block;font-weight:700;padding:2px 12px;
+  border-radius:4px;color:#fff;font-size:12.5px;letter-spacing:.03em;
+  text-transform:uppercase}
+body.g .verdict{border-radius:999px}
 .verdict.phishing{background:var(--red)}
-.verdict.legitimate{background:#4A5058}
-.verdict.suspicious{background:var(--sil);color:#1A1D21}
-.verdict.other{background:var(--ink);color:var(--bg)}
-.flags{margin:4px 0 0;color:var(--mute);font-size:12px}
+.verdict.legitimate{background:var(--green)}
+.verdict.suspicious{background:#FFC83D;color:#4A3A00}
+.verdict.other{background:#616161}
+.flags{margin:7px 0 0;padding-left:20px;font-size:12.5px}
+.flags li{margin:2px 0}
+.check{display:flex;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.check:first-of-type{border-top:0}
+.cnum{flex:none;width:20px;height:20px;border-radius:50%;margin-top:1px;
+  background:var(--accent);color:#fff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center}
+.cnum.wait{background:var(--mute)}
+.cbody{min-width:0;flex:1;font-size:12.5px}
+.ct{font-weight:600}
+.ct .chip{font-size:9.5px;font-weight:700;color:var(--mute);
+  letter-spacing:.04em;border:1px solid var(--line);border-radius:3px;
+  padding:0 4px;vertical-align:1px;margin-left:6px}
+.cr{color:var(--mute);white-space:pre-wrap;word-break:break-word;
+  margin-top:1px}
+details.tech{margin-top:3px}
+details.tech summary{font-size:11px;color:var(--mute);cursor:pointer}
+details.tech pre{font:11px/1.5 ui-monospace,Menlo,Consolas,monospace;
+  white-space:pre-wrap;word-break:break-word;margin:4px 0 0;
+  background:var(--bg);border-radius:4px;padding:6px 8px}
 .approval{border:2px solid var(--red)}
-.row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-input.txt{width:100%;font:inherit;border:1px solid var(--line);background:var(--bg);
-  color:var(--ink);border-radius:6px;padding:6px 9px;margin-top:7px}
-.lesson,.replytext{white-space:pre-wrap;font-size:11.5px;line-height:1.32}
+body.g .approval{box-shadow:0 1px 2px rgba(60,64,67,.12),
+  0 0 0 2px var(--red) inset}
+.row{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+input.txt{width:100%;font:inherit;border:1px solid var(--mute);
+  background:var(--panel);color:var(--ink);border-radius:var(--rad);
+  padding:7px 10px;margin-top:7px}
+body.g input.txt{border-radius:8px}
+.outcome{margin-top:8px;padding:6px 10px;border-radius:4px;font-size:12.5px;
+  font-weight:600;background:var(--bg)}
+.outcome.inbox{background:var(--red-soft);color:#A80000}
+.outcome.phish{background:#DFF6DD;color:#0B6A0B}
+.lesson,.replytext{white-space:pre-wrap;font-size:12.5px;line-height:1.5}
+.coachcard{border-left:4px solid var(--accent)}
+body.g .coachcard{border-left:4px solid var(--accent)}
+.fup{display:flex;gap:9px;padding:5px 0;font-size:12.5px;
+  align-items:flex-start}
+.fup .ficon{flex:none;margin-top:1px;color:var(--green)}
+.fup .ficon.wait{color:var(--mute)}
+.fup .fo{color:var(--mute);white-space:pre-wrap;word-break:break-word}
 .errcard{border:2px solid var(--red)}
 .errcard .m{color:var(--red);font-weight:700}
-.truth{background:var(--tint);border:1px solid var(--line);border-radius:8px;
-  padding:6px 10px;margin-top:6px;font-size:12px;flex:none}
-.truth .k{font-size:10.5px;font-weight:700;color:var(--mute);margin-bottom:3px}
+.mute{color:var(--mute)}
+.note{color:var(--mute);font-size:12.5px;margin:4px 2px 10px}
+
+/* mailbox truth strip: system state, pinned under the Guard panel */
+.truth{flex:none;background:#EAECEF;border:1px solid var(--line);
+  border-radius:var(--rad-lg);padding:6px 12px;margin:0 0 10px;
+  font-size:12px}
+body.g .truth{background:#E9EEF6;border:0}
+.truth .k{font-size:10.5px;font-weight:700;color:var(--mute);
+  margin-bottom:2px;letter-spacing:.04em}
 .truth code{font:11.5px ui-monospace,Menlo,Consolas,monospace;
   white-space:pre-wrap;word-break:break-word}
-.mute{color:var(--mute)}
-#drawer{position:fixed;top:0;bottom:0;left:0;width:600px;max-width:46%;
-  background:var(--panel);border-right:3px solid var(--red);z-index:50;
-  overflow:auto;padding:12px 14px;display:none}
+
+/* engine drawer */
+#drawer{position:fixed;top:0;bottom:0;left:0;width:640px;max-width:48%;
+  background:var(--panel);border-right:3px solid var(--accent);z-index:50;
+  overflow:auto;padding:14px 16px;display:none;
+  box-shadow:4px 0 18px rgba(0,0,0,.18)}
 #drawer.open{display:block}
 #drawer h2{margin:0 0 4px;font-size:15px}
-#drawer .note{font-size:11.5px;color:var(--mute);margin-bottom:8px}
+#drawer .note{margin:0 0 8px}
 #drawer pre{font:11px/1.55 ui-monospace,Menlo,Consolas,monospace;
   white-space:pre-wrap;word-break:break-word;margin:0}
-.offline{background:var(--dred);color:#fff;text-align:center;padding:4px;
-  font-size:12.5px;display:none}
-</style></head><body>
+</style></head><body class="o">
 <div class="banner">
   <span id="modebadge" class="mode off">&hellip;</span>
   <span id="commit"></span>
   <span id="timer" class="timer"></span>
   <span class="grow"></span>
-  <span class="sk">Client style:
-    <button data-skin="o" class="on">Outlook</button>
-    <button data-skin="g">Gmail</button></span>
+  <span>Phishing Guard &amp; Coach &mdash; demo</span>
 </div>
 <div id="offline" class="offline">Server unreachable &mdash; showing the last known state.</div>
 <div id="chrome"></div>
@@ -163,23 +288,39 @@ var REVEAL_MS = 320, POLL_MS = 500;
 var TITLES = {classify_email_text:"Read the text",
   check_sender_domain:"Check the sender", check_url:"Check the link",
   get_user_profile:"Look up the employee", record_verdict:"Record the verdict",
-  move_to_phishing_folder:"Move to Phishing (needs your approval)",
+  move_to_phishing_folder:"Move to Phishing",
   coach_user:"Coach the employee", log_training_event:"Log the decision",
   escalate_to_security:"Escalate to security"};
-var LAYERS = {classify_email_text:"EVIDENCE", check_sender_domain:"EVIDENCE",
-  check_url:"EVIDENCE", get_user_profile:"EVIDENCE", record_verdict:"JUDGMENT",
-  move_to_phishing_folder:"ACTION", coach_user:"COACH",
-  log_training_event:"FOLLOW UP", escalate_to_security:"FOLLOW UP"};
-// Which internal column of the Guard panel a tool's step lands in.
-var COL_B = {coach_user:1, log_training_event:1, escalate_to_security:1};
+
+var IC = {
+  search:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4.5 4.5"/></svg>',
+  mail:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
+  inbox:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.4 5h13.2L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></svg>',
+  warn:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+  shield:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="width:20px;height:20px"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/></svg>',
+  pen:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  check:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>',
+  trash:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
+  arch:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="5" rx="1"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg>',
+  move:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="m10 13 2 2 4-4"/></svg>'
+};
 
 var S = null, shown = 0, runKey = "", skin = "o", drawerOpen = false;
 var rejecting = false, typed = "", selected = "E-001", unreachable = false;
 var folder = "Inbox", autoSwitched = false;
+// The chosen client style survives a refresh; storage may be unavailable.
+try{
+  var sk0 = localStorage.getItem("hm-skin");
+  if(sk0 === "o" || sk0 === "g"){skin = sk0;}
+}catch(e){}
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function tryJSON(s){try{return JSON.parse(s);}catch(e){return null;}}
+function initials(name){
+  var p=String(name||"").split(/\s+/);
+  return ((p[0]||"").charAt(0)+(p[1]||"").charAt(0)).toUpperCase()||"?";
+}
 
 // Fixed per-tool templates over the tool's own JSON result (plan rule 4).
 // Anything unparseable or unknown falls back to the raw text, verbatim.
@@ -187,13 +328,14 @@ function stepDetail(call, out){
   var o = out==null ? null :
     (out.data!==undefined ? out.data : tryJSON(out.output));
   var a = call.args || {};
-  if(out==null){return "…";}
+  if(out==null){return "Running…";}
   if(o==null){return out.output;}
   switch(call.name){
     case "classify_email_text":
       if(o.phishing_probability==null){break;}
-      return "Phishing probability "+o.phishing_probability+"."+
-        (o.top_words&&o.top_words.length?" Top words: "+o.top_words.join(", ")+".":"");
+      return "Classifier output: phishing probability "+o.phishing_probability+
+        "."+(o.top_words&&o.top_words.length?
+        " Top words: "+o.top_words.join(", ")+".":"");
     case "check_sender_domain":
       return (a.domain||"?")+": "+(o.reputation||"?")+
         (o.age_days!=null?", "+o.age_days+" days old":"")+
@@ -215,6 +357,7 @@ function stepDetail(call, out){
 function phase(){return S?S.phase:"idle";}
 function events(){return S?S.events.slice(0,shown):[];}
 function running(){return ["investigating","paused","finishing"].indexOf(phase())>=0;}
+function shownHas(seq){return seq<shown;}
 
 function elapsed(){
   if(!S||!S.events.length){return null;}
@@ -254,111 +397,214 @@ function engineLine(e){
   }
 }
 
-function guardCards(){
-  // Walk the shown events once; pair calls with results; split into the
-  // panel's two columns. Order inside each column is Guard's own order.
+// ---- Guard panel: walk the shown events once and bucket them -------------
+// Checks, judgment, the move + human decision, coach, follow-up, reply and
+// error are the same events the engine drawer prints, grouped — nothing is
+// added and nothing is dropped. Unknown tools land in "checks" untouched.
+function guardData(){
   var ev = events(), outs = {}, i, e;
   for(i=0;i<ev.length;i++){if(ev[i].type==="tool_result"){outs[ev[i].call_id]=ev[i];}}
   var lastDec = -1, lastReq = -1;
   for(i=0;i<ev.length;i++){if(ev[i].type==="decision"){lastDec=ev[i].seq;}
     if(ev[i].type==="approval_request"){lastReq=ev[i].seq;}}
-  var moveIds={};
+  var d = {checks:[], verdict:null, flags:[], move:null, moveOut:null,
+    request:null, pending:false, decision:null, coach:null, coachOut:null,
+    follow:[], reply:null, error:null, anyEvidence:false};
   for(i=0;i<ev.length;i++){
-    if(ev[i].type==="tool_call"&&ev[i].name==="move_to_phishing_folder"){
-      moveIds[ev[i].call_id]=true;
-    }
-  }
-  var A=[], B=[], R=[], top=[];
-  for(i=0;i<ev.length;i++){
-    e=ev[i];
+    e = ev[i];
     if(e.type==="tool_call"){
-      var out=outs[e.call_id]&&shownHas(outs[e.call_id].seq)?outs[e.call_id]:null;
+      var out = outs[e.call_id]&&shownHas(outs[e.call_id].seq)
+        ? outs[e.call_id] : null;
       if(e.name==="record_verdict"){
-        var v=(e.args&&e.args.verdict)||"?";
-        var cls=["phishing","legitimate","suspicious"].indexOf(v)>=0?v:"other";
-        var fl=(e.args&&e.args.red_flags)||[];
-        A.push('<div class="card"><div><span class="layer">JUDGMENT</span> '+
-          '<span class="verdict '+cls+'">'+esc(v)+'</span></div>'+
-          (fl.length?'<div class="flags">'+fl.map(esc).join(" &middot; ")+
-          '</div>':'')+'</div>');
-        continue;
+        d.verdict = (e.args&&e.args.verdict)||"?";
+        d.flags = (e.args&&e.args.red_flags)||[];
+      }else if(e.name==="move_to_phishing_folder"){
+        d.move = e; d.moveOut = out;
+      }else if(e.name==="coach_user"){
+        d.coach = e; d.coachOut = out;
+      }else if(e.name==="log_training_event"||e.name==="escalate_to_security"){
+        d.follow.push({call:e, out:out});
+      }else{
+        d.checks.push({call:e, out:out});
       }
-      if(e.name==="coach_user"&&out){
-        // The lesson is always shown in full on its own card, even when
-        // Guard's reply repeats it word for word: the audience sees Coach's
-        // work where it happened, and the reply stays verbatim (rule 5).
-        A.push('<div class="card"><div class="layer">COACH</div>'+
-          '<div class="lesson">'+esc(out.output)+'</div></div>');
-        continue;
-      }
-      var layer=LAYERS[e.name]||"TOOL";
-      var title=TITLES[e.name]||e.name;
-      var detail=e.name==="coach_user"?"Writing the lesson…":stepDetail(e,out);
-      var html='<div class="step"><div class="dot'+(out?'':' wait')+'">'+
-        (out?'&#10003;':'&#8943;')+'</div><div class="sd"><span class="chip">'+
-        esc(layer)+(TITLES[e.name]?'':' · not a known tool')+'</span>'+
-        '<b>'+esc(title)+'.</b> <span class="di">'+esc(detail)+
-        '</span></div></div>';
-      A.push(html);
     }
     else if(e.type==="approval_request"){
-      var pend = phase()==="paused" && e.seq===lastReq && lastDec<e.seq;
-      var reason=(e.args&&e.args.reason)||"";
-      if(pend){
-        var inner;
-        if(rejecting){
-          inner='<div style="margin-top:7px">Why do you trust this email?</div>'+
-            '<input class="txt" id="why" value="'+esc(typed)+'" '+
-            'placeholder="Type your reason">'+
-            '<div class="row"><button class="btn pri" data-act="send">Send</button>'+
-            '<button class="btn" data-act="back">Back</button></div>';
-        }else{
-          inner='<div class="row"><button class="btn pri" data-act="approve">'+
-            'Approve</button><button class="btn rej" data-act="reject">Reject'+
-            '</button></div>';
-        }
-        A.push('<div class="card approval"><div class="layer">ACTION NEEDS '+
-          'YOUR APPROVAL</div><div style="margin:4px 0"><b>Guard wants to '+
-          'move this email to Phishing.</b></div><div class="mute">'+
-          esc(reason)+'</div>'+inner+'</div>');
-      }else if(!moveIds[e.call_id]){
-        // Only for a request whose tool call never rendered (odd runs).
-        A.push('<div class="step"><div class="dot">?</div><div class="sd">'+
-          '<span class="chip">ACTION</span><b>Guard asked for approval.</b> '+
-          '<span class="di">'+esc(reason)+'</span></div></div>');
+      d.request = e;
+      d.pending = phase()==="paused" && e.seq===lastReq && lastDec<e.seq;
+    }
+    else if(e.type==="decision"){d.decision = e;}
+    else if(e.type==="reply"){d.reply = e.text;}
+    else if(e.type==="run_error"){d.error = e.message;}
+    // case_started, truth, run_done: engine drawer + truth strip territory.
+  }
+  d.anyEvidence = d.checks.length>0;
+  return d;
+}
+
+function verdictBadge(v){
+  var cls = ["phishing","legitimate","suspicious"].indexOf(v)>=0?v:"other";
+  return '<span class="verdict '+cls+'">'+esc(v)+'</span>';
+}
+
+function runFolder(){
+  // Final disposition reads from the mailbox folder, never Guard's words.
+  if(!S||!S.email_id||!S.mailbox){return null;}
+  for(var i=0;i<S.mailbox.length;i++){
+    if(S.mailbox[i].email_id===S.email_id){return S.mailbox[i].folder;}
+  }
+  return null;
+}
+
+function guardSections(){
+  var d = guardData(), h = "";
+  var phz = phase();
+
+  if(d.error){
+    h+='<div class="gcard errcard"><div class="sect">Run failed</div>'+
+      '<div class="m">'+esc(d.error)+'</div><div class="mute" '+
+      'style="font-size:12px;margin-top:4px">Reset the case and retry once. '+
+      'If it fails again, switch to a replay (no silent fallback: your '+
+      'call).</div></div>';
+  }
+
+  // B. Investigation summary — status and verdict at a glance. The verdict
+  // and evidence come from record_verdict's own arguments; the folder from
+  // the mailbox. No risk scores: none exist in the data.
+  var pLabel = {investigating:"Investigating…",
+    paused:"Paused — waiting for your decision",
+    finishing:"Finishing up…", done:"Complete", error:"Failed"}[phz]||phz;
+  h+='<div class="gcard"><div class="sect">Investigation summary</div>'+
+    '<div class="kv">'+
+    '<span class="k">Status</span><span>'+esc(pLabel)+'</span>'+
+    '<span class="k">Guard verdict</span><span>'+
+    (d.verdict?verdictBadge(d.verdict):'<span class="mute">Not yet '+
+      'recorded</span>')+'</span>'+
+    '<span class="k">Recommended action</span><span>'+
+    (d.move||d.request?'Move to Phishing':
+     d.verdict==="legitimate"?'None — the email looks legitimate':
+     d.verdict?'No action requested':'<span class="mute">—</span>')+
+    '</span>';
+  var fol = runFolder();
+  if(fol&&(phz==="done"||d.decision)){
+    h+='<span class="k">Folder (mailbox)</span><span><b>'+esc(fol)+
+      '</b></span>';
+  }
+  h+='</div></div>';
+
+  // C. Checks performed — every evidence tool call, in Guard's own order,
+  // with the raw call and output behind "Technical details".
+  if(d.anyEvidence){
+    h+='<div class="gcard"><div class="sect">Checks performed</div>';
+    for(var c=0;c<d.checks.length;c++){
+      var ck = d.checks[c], call = ck.call, out = ck.out;
+      var known = !!TITLES[call.name];
+      h+='<div class="check"><span class="cnum'+(out?'':' wait')+'">'+
+        (out?(c+1):'…')+'</span><div class="cbody"><div class="ct">'+
+        esc(known?TITLES[call.name]:call.name)+
+        (known?'':'<span class="chip">not a known tool</span>')+
+        '</div><div class="cr">'+esc(stepDetail(call,out))+'</div>'+
+        '<details class="tech"><summary>Technical details</summary><pre>'+
+        esc(call.name+"("+JSON.stringify(call.args)+")"+
+            (out?"\n-> "+out.output:"\n(no result yet)"))+'</pre></details>'+
+        '</div></div>';
+    }
+    h+='</div>';
+  }
+
+  // D. Guard judgment — record_verdict, verbatim flags.
+  if(d.verdict){
+    h+='<div class="gcard"><div class="sect">Guard judgment</div>'+
+      verdictBadge(d.verdict)+
+      (d.flags.length?'<ul class="flags">'+d.flags.map(function(f){
+        return '<li>'+esc(f)+'</li>';}).join("")+'</ul>':
+       '<div class="mute" style="font-size:12.5px;margin-top:6px">No red '+
+       'flags recorded.</div>')+'</div>';
+  }
+
+  // E. Human decision — the recommendation, the live approval controls
+  // while paused, then the recorded decision and the mailbox outcome.
+  if(d.move||d.request||d.decision){
+    var reason = (d.request&&d.request.args&&d.request.args.reason)||
+      (d.move&&d.move.args&&d.move.args.reason)||"";
+    h+='<div class="gcard'+(d.pending?' approval':'')+'">'+
+      '<div class="sect">Human decision</div><div class="kv">'+
+      '<span class="k">Guard recommendation</span><span><b>Move to '+
+      'Phishing.</b>'+(reason?' <span class="mute">'+esc(reason)+'</span>':'')+
+      '</span>';
+    if(d.decision){
+      h+='<span class="k">Employee decision</span><span><b>'+
+        (d.decision.decision==="approve"?"Approved":"Rejected")+'</b></span>';
+      if(d.decision.reason){
+        h+='<span class="k">Employee reason</span><span>&ldquo;'+
+          esc(d.decision.reason)+'&rdquo;</span>';
       }
     }
-    else if(e.type==="decision"){
-      // Column B reads as "what followed the human's decision".
-      A.push('<div class="step"><div class="dot">&#9995;</div>'+
-        '<div class="sd"><span class="chip">YOUR DECISION</span><b>'+
-        (e.decision==="approve"?"Approved the move.":"Rejected the move.")+
-        '</b>'+(e.reason?' <span class="di">&ldquo;'+esc(e.reason)+
-        '&rdquo;</span>':'')+'</div></div>');
+    h+='</div>';
+    if(d.pending){
+      if(rejecting){
+        h+='<div style="margin-top:9px">Why do you trust this email?</div>'+
+          '<input class="txt" id="why" value="'+esc(typed)+'" '+
+          'placeholder="Type your reason">'+
+          '<div class="row"><button class="btn pri" data-act="send">Send'+
+          '</button><button class="btn" data-act="back">Back</button></div>';
+      }else{
+        h+='<div class="row"><button class="btn pri" data-act="approve">'+
+          'Approve the move</button><button class="btn rej" '+
+          'data-act="reject">Reject</button></div>';
+      }
+    }else if(d.decision){
+      var fol2 = runFolder();
+      if(fol2){
+        h+='<div class="outcome '+(fol2==="Phishing"?'phish':'inbox')+'">'+
+          (fol2==="Phishing"?'The email is in the Phishing folder.':
+           'The email remains in the Inbox.')+'</div>';
+      }
     }
-    else if(e.type==="reply"){
-      // Full width below the two columns, one column of text, so the
-      // reply reads top to bottom.
-      R.push('<div class="card"><div class="layer">GUARD&rsquo;S REPLY '+
-        '(verbatim)</div><div class="replytext">'+esc(e.text)+'</div></div>');
+    if(d.moveOut){
+      h+='<details class="tech"><summary>Technical details</summary><pre>'+
+        esc(d.move.name+"("+JSON.stringify(d.move.args)+")\n-> "+
+            d.moveOut.output)+'</pre></details>';
     }
-    else if(e.type==="run_error"){
-      top.push('<div class="card errcard"><div class="layer">RUN FAILED</div>'+
-        '<div class="m">'+esc(e.message)+'</div><div class="mute" '+
-        'style="font-size:12px;margin-top:4px">Reset the case and retry once. '+
-        'If it fails again, switch to a replay (no silent fallback: your '+
-        'call).</div></div>');
-    }
-    // case_started, truth, run_done: engine panel + truth strip territory.
+    h+='</div>';
   }
-  return {top:top.join(""),A:A.join(""),B:B.join(""),R:R.join("")};
+
+  // F. Coach — the lesson is always shown in full, word for word, even
+  // when Guard's reply repeats it (rule 5).
+  if(d.coach){
+    h+='<div class="gcard coachcard"><div class="sect">'+IC.pen+
+      ' Coach</div>'+
+      (d.coachOut?'<div class="lesson">'+esc(d.coachOut.output)+'</div>':
+       '<div class="mute" style="font-size:12.5px">Writing the '+
+       'lesson…</div>')+'</div>';
+  }
+
+  // G. Follow-up actions — logged / escalated, each with its real result.
+  if(d.follow.length){
+    h+='<div class="gcard"><div class="sect">Follow-up actions</div>';
+    for(var f=0;f<d.follow.length;f++){
+      var fc = d.follow[f];
+      h+='<div class="fup"><span class="ficon'+(fc.out?'':' wait')+'">'+
+        (fc.out?IC.check:'…')+'</span><div><b>'+
+        esc(TITLES[fc.call.name]||fc.call.name)+'.</b> '+
+        '<span class="fo">'+esc(fc.out?fc.out.output:"Running…")+
+        '</span></div></div>';
+    }
+    h+='</div>';
+  }
+
+  // Guard's reply — verbatim, compact, single column (rule 5).
+  if(d.reply!=null){
+    h+='<div class="gcard"><div class="sect">Guard&rsquo;s reply '+
+      '(verbatim)</div><div class="replytext">'+esc(d.reply)+'</div></div>';
+  }
+  return h;
 }
-function shownHas(seq){return seq<shown;}
 
 function render(){
   if(rejecting&&document.activeElement&&document.activeElement.id==="why"){
     return; // don't yank the input out from under the presenter's typing
   }
+  document.body.className = skin==="g"?"g":"o";
   var mode=S?S.mode:"?", commit=S?S.guard_commit:"";
   var badge=document.getElementById("modebadge");
   badge.textContent=unreachable?"OFFLINE":
@@ -397,73 +643,96 @@ function render(){
       }
     }
   }
+  var who=sel?sel.to.name:"";
 
-  // browser chrome (skin)
-  var h='<div class="'+skin+'"><div class="top"><span class="logo">Harbor '+
-    'Mail</span><div class="search">'+(skin==="g"?"Search mail":"Search")+
-    '</div><span>'+esc(sel?sel.to.name:"")+'</span></div>'+
-    '<div class="toolrow"><span>New mail</span><span>Delete</span>'+
-    '<span>Archive</span><span>Move to</span></div></div>';
+  // ---- application header (per-skin chrome) ----
+  var h='<div class="top"><span class="logo">'+IC.mail+' Harbor Mail</span>'+
+    '<div class="search">'+IC.search+' '+
+    (skin==="g"?"Search mail":"Search")+'</div>'+
+    '<span class="sk" role="group" aria-label="Client style">'+
+    '<button data-skin="o"'+(skin==="o"?' class="on"':'')+'>Outlook</button>'+
+    '<button data-skin="g"'+(skin==="g"?' class="on"':'')+'>Gmail</button>'+
+    '</span>'+
+    '<span class="who"><span class="avatar">'+esc(initials(who))+'</span>'+
+    esc(who)+'</span></div>'+
+    '<div class="toolrow"><span>'+IC.pen+' New mail</span><span>'+IC.trash+
+    ' Delete</span><span>'+IC.arch+' Archive</span><span>'+IC.move+
+    ' Move to</span></div>';
   document.getElementById("chrome").innerHTML=h;
 
   var inbox=0, phish=0;
   for(i=0;i<mail.length;i++){if(mail[i].folder==="Phishing"){phish++;}else{inbox++;}}
 
-  // rail: folders + the demo messages
-  h='<div class="col"><span class="compose">Compose</span>'+
+  // ---- sidebar: compose + the two real folders + signed-in employee ----
+  h='<div class="col side"><span class="newmail">'+IC.pen+' '+
+    (skin==="g"?"Compose":"New mail")+'</span>'+
     '<h3 class="rail">'+(skin==="o"?"Favorites":"Labels")+'</h3>'+
-    '<div class="folder'+(folder==="Inbox"?' on':'')+'" data-folder="Inbox">'+
-    '<span>Inbox</span><span class="n">'+inbox+'</span></div>'+
-    '<div class="folder'+(folder==="Phishing"?' on':'')+'" data-folder='+
-    '"Phishing"><span>Phishing</span><span class="n">'+phish+'</span></div>'+
-    '<h3 class="rail">Messages</h3>';
+    '<button class="folder'+(folder==="Inbox"?' on':'')+
+    '" data-folder="Inbox">'+IC.inbox+'<span>Inbox</span>'+
+    '<span class="n">'+inbox+'</span></button>'+
+    '<button class="folder'+(folder==="Phishing"?' on':'')+
+    '" data-folder="Phishing">'+IC.warn+'<span>Phishing</span>'+
+    '<span class="n">'+phish+'</span></button>'+
+    '<h3 class="rail">Signed in as</h3><div class="me"><b>'+esc(who)+
+    '</b><span class="mute">'+esc(sel?sel.to.role:"")+'</span></div></div>';
+
+  // ---- message list for the current folder ----
+  h+='<div class="col list"><div class="listhead">'+esc(folder)+
+    ' <span class="n">&middot; '+(folder==="Phishing"?phish:inbox)+
+    '</span></div><div class="listbody">';
+  var any=false;
   for(i=0;i<mail.length;i++){
     m=mail[i];
     if((m.folder==="Phishing")!==(folder==="Phishing")){continue;}
+    any=true;
     h+='<button class="msg'+(m.email_id===selected?' on':'')+'" data-mail="'+
       esc(m.email_id)+'"><div class="f">'+esc(m.from_name)+'</div>'+
-      '<div class="s">'+esc(m.subject)+'</div><div class="st">'+
+      '<div class="s">'+esc(m.subject)+'</div><div class="p">'+
+      esc(String(m.body||"").split("\n")[0])+'</div><div class="st">'+
       (m.case?'Case '+esc(m.case)+' &middot; ':'')+esc(statusLabel(m))+
       '</div></button>';
   }
-  h+='<h3 class="rail">Signed in as</h3><div>'+esc(sel?sel.to.name:"")+
-    '</div><div class="mute">'+esc(sel?sel.to.role:"")+'</div></div>';
+  if(!any){h+='<div class="empty">Nothing in '+esc(folder)+'.</div>';}
+  h+='</div></div>';
 
-  // email pane
-  h+='<div class="col">'+(sel?'<div class="hdr"><h2>'+esc(sel.subject)+
-    '</h2><div><b>From:</b> '+esc(sel.from_name)+' &lt;'+esc(sel.from_addr)+
-    '&gt;</div><div><b>Reply-To:</b> '+esc(sel.reply_to)+'</div>'+
-    '<div><b>To:</b> '+esc(sel.to.name)+'</div></div><pre class="body">'+
-    esc(sel.body)+'</pre>':'')+'</div>';
+  // ---- reading pane ----
+  h+='<div class="col reader">'+(sel?'<div class="hdr"><h2>'+
+    esc(sel.subject)+'</h2><div class="meta"><span class="avatar">'+
+    esc(initials(sel.from_name))+'</span><div class="lines">'+
+    '<div><b>'+esc(sel.from_name)+'</b> &lt;'+esc(sel.from_addr)+'&gt;</div>'+
+    '<div><b>Reply-To:</b> '+esc(sel.reply_to)+'</div>'+
+    '<div><b>To:</b> '+esc(sel.to.name)+'</div></div></div></div>'+
+    '<pre class="body">'+esc(sel.body)+'</pre>':'')+'</div>';
 
-  // Guard panel
-  var cards=guardCards();
+  // ---- Guard panel ----
   var runEmail=S?S.email_id:null;
   var canStart=!running();
-  h+='<div class="col col-guard"><div class="gtitle"><div><h2>Guard</h2> '+
-    '<span class="sub">investigates, asks, teaches'+
-    (runEmail&&S.events.length?' &middot; running on '+esc(runEmail):'')+
-    '</span></div><span>';
+  h+='<div class="col guard"><div class="gtop"><span class="shield">'+
+    IC.shield+'</span><div><h2>Guard</h2><div class="sub">Investigates, '+
+    'asks, teaches'+(runEmail&&S.events.length?' &middot; case '+
+    esc(runEmail):'')+'</div></div><span class="btns">';
   h+='<button class="btn" data-act="engine">'+(drawerOpen?'Hide':'Show')+
-    ' the engine</button> ';
+    ' the engine</button>';
   if(canStart){h+='<button class="btn pri" data-act="run">Check this email'+
-    '</button> ';}
-  if(S&&S.events.length){h+='<button class="btn" data-act="reset">Reset case'+
     '</button>';}
+  if(S&&S.events.length){h+='<button class="btn" data-act="reset">Reset '+
+    'case</button>';}
   h+='</span></div><div class="gbody">';
   if(!S||!S.events.length){
-    h+='<p class="mute">Guard investigates before it does anything. Each '+
+    h+='<p class="note">Guard investigates before it does anything. Each '+
       'step below is a real tool call, chosen by the agent for this email. '+
       'Select a message and press &ldquo;Check this email&rdquo;.</p>';
-  }else if(runEmail&&runEmail!==selected){
-    h+='<p class="mute">Guard is working on '+esc(runEmail)+'. Select that '+
-      'message to follow along.</p>';
+  }else{
+    if(runEmail&&runEmail!==selected){
+      h+='<p class="note">Guard is working on '+esc(runEmail)+'. Select '+
+        'that message to follow along.</p>';
+    }
+    if(phase()==="investigating"&&shown>=S.events.length){
+      h+='<p class="note">Guard is investigating&hellip;</p>';
+    }
+    h+=guardSections();
   }
-  if(S&&S.events.length&&phase()==="investigating"&&shown>=S.events.length){
-    h+='<p class="mute">Guard is investigating&hellip;</p>';
-  }
-  h+=cards.top+'<div class="gcols">'+cards.A+cards.B+'</div>'+cards.R+
-    '</div>';
+  h+='</div>';
   if(S&&S.events.length&&S.truth){
     h+='<div class="truth"><div class="k">MAILBOX TRUTH (read from the '+
       'system, not from Guard)</div><code>Folder: '+esc(S.truth.folder)+
@@ -512,8 +781,7 @@ poll();
 document.addEventListener("click",function(ev){
   var sk=ev.target.closest&&ev.target.closest("[data-skin]");
   if(sk){skin=sk.getAttribute("data-skin");
-    document.querySelectorAll(".sk button").forEach(function(b){
-      b.className=b===sk?"on":"";});
+    try{localStorage.setItem("hm-skin",skin);}catch(e){}
     render();return;}
   var mm=ev.target.closest&&ev.target.closest("[data-mail]");
   if(mm){selected=mm.getAttribute("data-mail");render();return;}
