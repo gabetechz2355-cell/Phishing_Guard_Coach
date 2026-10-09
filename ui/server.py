@@ -224,8 +224,16 @@ def make_handler(app):
     return Handler
 
 
+class UIServer(ThreadingHTTPServer):
+    """ThreadingHTTPServer without SO_REUSEADDR. http.server turns reuse on
+    by default, and on Windows that lets a second server bind 127.0.0.1:8765
+    while the first is still alive — so a stale fake server could silently
+    answer for a live one. With reuse off, the second start fails loudly."""
+    allow_reuse_address = False
+
+
 def make_server(app, port):
-    return ThreadingHTTPServer(("127.0.0.1", port), make_handler(app))
+    return UIServer(("127.0.0.1", port), make_handler(app))
 
 
 def main(argv=None):
