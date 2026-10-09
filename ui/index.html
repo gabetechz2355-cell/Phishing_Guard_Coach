@@ -55,7 +55,8 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .g .compose{display:inline-block;background:#C2E7FF;color:#001D35;
   border-radius:16px;padding:8px 18px;font-weight:700;margin-bottom:10px}
 h3.rail{font-size:11px;font-weight:700;color:var(--mute);margin:10px 0 5px}
-.folder{display:flex;justify-content:space-between;padding:5px 10px}
+.folder{display:flex;justify-content:space-between;padding:5px 10px;
+  cursor:pointer}
 .o .folder.on{background:var(--tint);border-left:4px solid #0F4C81;font-weight:700}
 .g .folder{border-radius:0 999px 999px 0}
 .g .folder.on{background:#D3E3FD;color:#001D35;font-weight:700}
@@ -120,7 +121,6 @@ button.btn:disabled{opacity:.45;cursor:default}
 input.txt{width:100%;font:inherit;border:1px solid var(--line);background:var(--bg);
   color:var(--ink);border-radius:6px;padding:6px 9px;margin-top:7px}
 .lesson,.replytext{white-space:pre-wrap;font-size:11.5px;line-height:1.32}
-.replytext{columns:2;column-gap:20px}
 .errcard{border:2px solid var(--red)}
 .errcard .m{color:var(--red);font-weight:700}
 .truth{background:var(--tint);border:1px solid var(--line);border-radius:8px;
@@ -175,6 +175,7 @@ var COL_B = {coach_user:1, log_training_event:1, escalate_to_security:1};
 
 var S = null, shown = 0, runKey = "", skin = "o", drawerOpen = false;
 var rejecting = false, typed = "", selected = "E-001", unreachable = false;
+var folder = "Inbox", autoSwitched = false;
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
@@ -209,17 +210,6 @@ function stepDetail(call, out){
           JSON.stringify(o.past_misses)+".":" No past misses.");
   }
   return out.output;
-}
-
-// The same loose containment rule scripts/monday_check.py uses: the share
-// of the lesson's words that appear in the reply.
-function overlap(lesson, reply){
-  var strip=function(w){return w.replace(/^[.,;:!?()"'*]+|[.,;:!?()"'*]+$/g,"")
-    .toLowerCase();};
-  var lw=lesson.split(/\s+/).map(strip).filter(Boolean);
-  var rw={}; reply.split(/\s+/).map(strip).forEach(function(w){rw[w]=1;});
-  if(!lw.length){return 0;}
-  return lw.filter(function(w){return rw[w];}).length/lw.length;
 }
 
 function phase(){return S?S.phase:"idle";}
@@ -294,22 +284,11 @@ function guardCards(){
         continue;
       }
       if(e.name==="coach_user"&&out){
-        // The lesson is shown exactly once, in full, never edited. When the
-        // reply (below, verbatim) already carries it word for word - the
-        // frozen Guard copies it - the Coach card collapses to a step so
-        // the whole case fits one screen. If Guard ever paraphrases, the
-        // full card stays, so the lesson is never hidden (plan rules 5, 12).
-        var rep=null;
-        for(var j=0;j<ev.length;j++){if(ev[j].type==="reply"){rep=ev[j];}}
-        if(rep&&rep.text&&overlap(out.output,rep.text)>=0.8){
-          A.push('<div class="step"><div class="dot">&#10003;</div>'+
-            '<div class="sd"><span class="chip">COACH</span><b>Coach wrote '+
-            'the lesson.</b> <span class="di">Passed to Guard word for '+
-            'word; read it in Guard&rsquo;s reply below.</span></div></div>');
-        }else{
-          A.push('<div class="card"><div class="layer">COACH</div>'+
-            '<div class="lesson">'+esc(out.output)+'</div></div>');
-        }
+        // The lesson is always shown in full on its own card, even when
+        // Guard's reply repeats it word for word: the audience sees Coach's
+        // work where it happened, and the reply stays verbatim (rule 5).
+        A.push('<div class="card"><div class="layer">COACH</div>'+
+          '<div class="lesson">'+esc(out.output)+'</div></div>');
         continue;
       }
       var layer=LAYERS[e.name]||"TOOL";
@@ -358,8 +337,8 @@ function guardCards(){
         '&rdquo;</span>':'')+'</div></div>');
     }
     else if(e.type==="reply"){
-      // Full width below the two columns: wraps wide and shallow, so the
-      // tallest case still fits one screen (plan rule 12).
+      // Full width below the two columns, one column of text, so the
+      // reply reads top to bottom.
       R.push('<div class="card"><div class="layer">GUARD&rsquo;S REPLY '+
         '(verbatim)</div><div class="replytext">'+esc(e.text)+'</div></div>');
     }
@@ -395,8 +374,29 @@ function render(){
 
   var mail=(S&&S.mailbox)||[];
   var sel=null, m, i;
+  // Real folders: when the current run's email lands in Phishing after an
+  // approve the audience has seen, follow it there once per run, with the
+  // email kept selected. The mailbox (system state) decides, not the reply.
+  if(S&&S.email_id&&!autoSwitched){
+    var movedNow=false, approved=false, evs=events();
+    for(i=0;i<mail.length;i++){
+      if(mail[i].email_id===S.email_id&&mail[i].folder==="Phishing"){movedNow=true;}
+    }
+    for(i=0;i<evs.length;i++){
+      if(evs[i].type==="decision"&&evs[i].decision==="approve"){approved=true;}
+    }
+    if(movedNow&&approved){autoSwitched=true;folder="Phishing";selected=S.email_id;}
+  }
   for(i=0;i<mail.length;i++){if(mail[i].email_id===selected){sel=mail[i];}}
-  if(!sel&&mail.length){sel=mail[0];selected=sel.email_id;}
+  // No selection: fall back to the first email of the current folder; an
+  // empty folder shows an empty reading pane.
+  if(!sel){
+    for(i=0;i<mail.length;i++){
+      if(!sel&&(mail[i].folder==="Phishing")===(folder==="Phishing")){
+        sel=mail[i];selected=sel.email_id;
+      }
+    }
+  }
 
   // browser chrome (skin)
   var h='<div class="'+skin+'"><div class="top"><span class="logo">Harbor '+
@@ -412,11 +412,14 @@ function render(){
   // rail: folders + the demo messages
   h='<div class="col"><span class="compose">Compose</span>'+
     '<h3 class="rail">'+(skin==="o"?"Favorites":"Labels")+'</h3>'+
-    '<div class="folder on"><span>Inbox</span><span class="n">'+inbox+
-    '</span></div><div class="folder"><span>Phishing</span><span class="n">'+
-    phish+'</span></div><h3 class="rail">Messages</h3>';
+    '<div class="folder'+(folder==="Inbox"?' on':'')+'" data-folder="Inbox">'+
+    '<span>Inbox</span><span class="n">'+inbox+'</span></div>'+
+    '<div class="folder'+(folder==="Phishing"?' on':'')+'" data-folder='+
+    '"Phishing"><span>Phishing</span><span class="n">'+phish+'</span></div>'+
+    '<h3 class="rail">Messages</h3>';
   for(i=0;i<mail.length;i++){
     m=mail[i];
+    if((m.folder==="Phishing")!==(folder==="Phishing")){continue;}
     h+='<button class="msg'+(m.email_id===selected?' on':'')+'" data-mail="'+
       esc(m.email_id)+'"><div class="f">'+esc(m.from_name)+'</div>'+
       '<div class="s">'+esc(m.subject)+'</div><div class="st">'+
@@ -494,7 +497,7 @@ function poll(){
     unreachable=false;
     S=s;
     var key=s.events.length?s.events[0].at+"|"+s.email_id:"";
-    if(key!==runKey){runKey=key;shown=0;}
+    if(key!==runKey){runKey=key;shown=0;autoSwitched=false;}
     if(s.phase==="error"){shown=s.events.length;}
     render();
   }).catch(function(){unreachable=true;render();});
@@ -514,13 +517,24 @@ document.addEventListener("click",function(ev){
     render();return;}
   var mm=ev.target.closest&&ev.target.closest("[data-mail]");
   if(mm){selected=mm.getAttribute("data-mail");render();return;}
+  var ff=ev.target.closest&&ev.target.closest("[data-folder]");
+  if(ff){folder=ff.getAttribute("data-folder");
+    // Keep the selection only if it lives in this folder; otherwise take
+    // the folder's first email (render falls back), or none when empty.
+    var mb=(S&&S.mailbox)||[], selIn=false, fi;
+    for(fi=0;fi<mb.length;fi++){
+      if(mb[fi].email_id===selected&&
+         (mb[fi].folder==="Phishing")===(folder==="Phishing")){selIn=true;}
+    }
+    if(!selIn){selected=null;}
+    render();return;}
   var b=ev.target.closest&&ev.target.closest("[data-act]");
   if(!b){return;}
   var act=b.getAttribute("data-act");
   if(act==="engine"){drawerOpen=!drawerOpen;render();}
   if(act==="run"){rejecting=false;typed="";
     api("POST","/api/start",{email_id:selected}).then(poll);}
-  if(act==="reset"){rejecting=false;typed="";
+  if(act==="reset"){rejecting=false;typed="";folder="Inbox";autoSwitched=false;
     api("POST","/api/reset").then(poll);}
   if(act==="approve"){api("POST","/api/decision",{decision:"approve"}).then(poll);}
   if(act==="reject"){rejecting=true;render();
