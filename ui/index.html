@@ -86,9 +86,20 @@ body.g .toolrow{display:none}
 
 /* ---- the five-region grid ---- */
 .app{flex:1;min-height:0;display:grid;min-width:1366px;
-  grid-template-columns:186px 300px minmax(330px,43fr) minmax(400px,57fr)}
+  grid-template-columns:186px 300px minmax(360px,1fr) 6px var(--gw,520px)}
 .col{min-height:0;overflow:auto}
 body.g .app{gap:10px;padding:0 10px 10px}
+
+/* draggable divider between the reader and the Guard panel: 6px hit
+   area, 1px visible line, a small grip; double-click resets the width */
+.divider{cursor:col-resize;position:relative;touch-action:none}
+.divider::before{content:"";position:absolute;left:2px;top:0;bottom:0;
+  width:1px;background:var(--line)}
+.divider::after{content:"";position:absolute;left:1px;top:50%;
+  margin-top:-16px;height:32px;width:3px;border-radius:2px;
+  background:var(--mute);opacity:.55}
+.divider:hover::before{background:var(--accent)}
+body.resizing{user-select:none;cursor:col-resize}
 
 /* sidebar */
 .side{padding:10px 8px;border-right:1px solid var(--line);
@@ -141,9 +152,8 @@ body.g .msg.on .p,body.g .msg.on .st{color:#41474D}
 .empty{padding:16px;color:var(--mute);font-size:12.5px}
 
 /* reader */
-.reader{background:var(--panel);border-right:1px solid var(--line);
-  padding:16px 20px}
-body.g .reader{border-right:0;border-radius:var(--rad-lg)}
+.reader{background:var(--panel);padding:16px 20px}
+body.g .reader{border-radius:var(--rad-lg)}
 .hdr{border-bottom:1px solid var(--line);padding-bottom:12px;
   margin-bottom:12px}
 .hdr h2{margin:0 0 10px;font-size:19px;font-weight:600}
@@ -309,6 +319,24 @@ var S = null, shown = 0, runKey = "", skin = "o", drawerOpen = false;
 var rejecting = false, typed = "", selected = "E-001", unreachable = false;
 var folder = "Inbox", autoSwitched = false;
 var lastApp = "", lastDrawer = "", openTech = {};
+
+// Guard panel width. Applied as a CSS variable on #app's own style
+// attribute: render() replaces #app's children, never #app itself, so
+// the width survives every poll/re-render. resizing skips render() so
+// the captured divider element is not replaced mid-drag.
+var GW_DEFAULT = 520, GW_MIN = 320, READER_MIN = 360;
+var gw = GW_DEFAULT, resizing = false;
+try{
+  var gw0 = parseInt(localStorage.getItem("hm-gw"), 10);
+  if(gw0 >= GW_MIN){gw = gw0;}
+}catch(e){}
+function applyGw(){
+  var app = document.getElementById("app");
+  var max = app.clientWidth - 186 - 300 - 6 - READER_MIN;
+  gw = Math.min(Math.max(gw, GW_MIN), Math.max(max, GW_MIN));
+  app.style.setProperty("--gw", gw+"px");
+}
+function saveGw(){try{localStorage.setItem("hm-gw",String(gw));}catch(e){}}
 // The chosen client style survives a refresh; storage may be unavailable.
 try{
   var sk0 = localStorage.getItem("hm-skin");
@@ -614,6 +642,7 @@ function guardSections(){
 }
 
 function render(){
+  if(resizing){return;} // keep the captured divider element alive
   if(rejecting&&document.activeElement&&document.activeElement.id==="why"){
     return; // don't yank the input out from under the presenter's typing
   }
@@ -717,6 +746,10 @@ function render(){
     '<div><b>To:</b> '+esc(sel.to.name)+'</div></div></div></div>'+
     '<pre class="body">'+esc(sel.body)+'</pre>':'')+'</div>';
 
+  // ---- divider (drag to resize the Guard panel) ----
+  h+='<div class="divider" title="Drag to resize; double-click to reset" '+
+    'aria-hidden="true"></div>';
+
   // ---- Guard panel ----
   var runEmail=S?S.email_id:null;
   var canStart=!running();
@@ -806,6 +839,41 @@ function poll(){
     render();
   }).catch(function(){unreachable=true;render();});
 }
+
+applyGw();
+window.addEventListener("resize",applyGw);
+
+// Divider drag: pointer events with capture. Width changes touch only
+// the CSS variable on #app, never the DOM, so dragging stays smooth
+// while a run streams in; render() catches up on pointerup.
+document.addEventListener("pointerdown",function(ev){
+  var dv=ev.target.closest&&ev.target.closest(".divider");
+  if(!dv||ev.button!==0){return;}
+  resizing=true;
+  dv.setPointerCapture(ev.pointerId);
+  document.body.classList.add("resizing");
+  ev.preventDefault();
+});
+document.addEventListener("pointermove",function(ev){
+  if(!resizing){return;}
+  var r=document.getElementById("app").getBoundingClientRect();
+  gw=Math.round(r.right-ev.clientX-3); // 3 = half the divider width
+  applyGw();
+});
+function endResize(){
+  if(!resizing){return;}
+  resizing=false;
+  document.body.classList.remove("resizing");
+  saveGw();
+  render();
+}
+document.addEventListener("pointerup",endResize);
+document.addEventListener("pointercancel",endResize);
+document.addEventListener("dblclick",function(ev){
+  if(ev.target.closest&&ev.target.closest(".divider")){
+    gw=GW_DEFAULT;applyGw();saveGw();
+  }
+});
 
 setInterval(poll,POLL_MS);
 setInterval(function(){
